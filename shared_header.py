@@ -789,23 +789,24 @@ def render_header(
         color: #1e293b !important;
     }}
 
-    /* Light mode - Clean headings without blur/shadow */
-    body[data-theme="light"] h1,
-    body[data-theme="light"] h2,
-    body[data-theme="light"] h3,
-    body[data-theme="light"] h4,
-    body[data-theme="light"] h5,
-    body[data-theme="light"] h6 {{
-        color: #1e293b !important;
+    /* Light mode - Clean headings without blur/shadow
+       Updated: force headings to WHITE in light theme for improved contrast */
+    body[data-theme="light"] .stApp h1,
+    body[data-theme="light"] .stApp h2,
+    body[data-theme="light"] .stApp h3,
+    body[data-theme="light"] .stApp h4,
+    body[data-theme="light"] .stApp h5,
+    body[data-theme="light"] .stApp h6 {{
+        color: #ffffff !important;
         text-shadow: none !important;
         filter: none !important;
         font-weight: 700 !important;
     }}
 
-    body[data-theme="light"] .stMarkdown h1,
-    body[data-theme="light"] .stMarkdown h2,
-    body[data-theme="light"] .stMarkdown h3 {{
-        color: #1e293b !important;
+    body[data-theme="light"] .stApp .stMarkdown h1,
+    body[data-theme="light"] .stApp .stMarkdown h2,
+    body[data-theme="light"] .stApp .stMarkdown h3 {{
+        color: #ffffff !important;
         text-shadow: none !important;
         filter: none !important;
     }}
@@ -848,6 +849,7 @@ def render_header(
         color: #f8fafc !important;
     }}
 
+    /* Keep general app text darker in light theme, but headings are explicitly forced white above */
     body[data-theme="light"] .stApp * {{
         color: #1e293b !important;
     }}
