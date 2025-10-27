@@ -109,7 +109,7 @@ def render_login_page():
     
     render_header(
         agent_name="Business Problem Discovery Assistant",
-        agent_subtitle="AI-powered agents for strategic business insights",
+        agent_subtitle="",
         enable_admin_access=True,
         header_height=100
     )
@@ -202,7 +202,7 @@ def render_login_page():
         font-size: 3.5rem;
         font-weight: 900;
         text-align: center;
-        color: #ffffff;
+        color: ;
         margin: 0 0 0.8rem 0;
         letter-spacing: -1px;
     }
@@ -367,7 +367,7 @@ def render_login_page():
     st.markdown("""
     <div class="welcome-card-static">
         <h1 class="static-title">Welcome</h1>
-        <p class="static-subtitle">🚀 Enter the AI-Powered Future</p>
+        <p class="static-subtitle"></p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -524,9 +524,10 @@ def render_main_app():
             padding: 1.5rem 2rem;
             margin: 2rem 0 1.5rem 0;
             position: relative;
+            transform: translateY(-5px) scale(1.02);
             box-shadow: 
-                0 8px 25px rgba(139, 30, 30, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+                0 15px 40px rgba(139, 30, 30, 0.2),
+                0 0 30px rgba(255, 107, 53, 0.3);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
         }
@@ -539,12 +540,11 @@ def render_main_app():
             background: linear-gradient(135deg, #ff6b35, #8b1e1e, #ff6b35);
             background-size: 200% 200%;
             animation: borderRotate 4s linear infinite;
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 
+                0 15px 40px rgba(139, 30, 30, 0.2),
+                0 0 30px rgba(255, 107, 53, 0.3);
             z-index: -1;
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
-        
-        .section-header-magnetic:hover::before {
             opacity: 1;
         }
         
@@ -553,15 +553,10 @@ def render_main_app():
             50% { background-position: 100% 50%; }
         }
         
-        .section-header-magnetic:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 
-                0 15px 40px rgba(139, 30, 30, 0.2),
-                0 0 30px rgba(255, 107, 53, 0.3);
-        }
+
         
         .section-header-magnetic h3 {
-            color: #1e293b;
+            color: #fff;
             font-size: 1.5rem;
             font-weight: 800;
             margin: 0;
@@ -838,7 +833,7 @@ def render_main_app():
     
     st.markdown("""
     <div class="section-header-magnetic">
-        <h3>AI Agent Arsenal</h3>
+        <h3 style="color:#1e293b;"> Agent Arsenal</h3>
     </div>
     """, unsafe_allow_html=True)
 
