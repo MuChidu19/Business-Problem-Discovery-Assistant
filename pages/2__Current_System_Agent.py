@@ -100,7 +100,13 @@ def updated_prompt(problem, outputs):
     return (
         f"Problem statement - {problem}\n\n"
         f"Context from vocabulary:\n{vocab_output}\n\n"
-        "Describe the current system, inputs, outputs, and pain points in detail with clear sections."
+        "Clearly describe the following sections, each starting with its heading:\n\n"
+        "1. Core Business Problem:\n"
+        "2. Current System:\n"
+        "3. Inputs:\n"
+        "4. Outputs:\n"
+        "5. Pain Points:\n\n"
+        "Ensure each section is clearly labeled exactly as shown."
     )
 
 API_CONFIGS = [

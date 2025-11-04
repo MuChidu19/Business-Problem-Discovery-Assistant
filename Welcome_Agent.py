@@ -845,8 +845,7 @@ def render_main_app():
         {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
         {"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
         {"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
-        {"name": "Hardness Summary Agent", "icon": "", "page": "pages/7__Hardness_Summary_Agent.py", "desc": "Assess complexity"},
-    ]
+    ]        
 
     if st.session_state.launched_agent:
         active_agent = next((agent for agent in agents if agent["page"] == st.session_state.launched_agent), None)
@@ -858,7 +857,7 @@ def render_main_app():
             </div>
             """, unsafe_allow_html=True)
 
-            col1, col2, col3 = st.columns([1, 2, 1])
+            col1, col2, col3 = st.columns([1, 1, 1])
             with col2:
                 if st.button(f"↩️ Return to {active_agent['icon']} {active_agent['name']}", width='stretch', type="primary"):
                     try:
@@ -897,30 +896,6 @@ def render_main_app():
                             st.warning("Please save your business problem details first")
 
     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
-
-    # 7th agent centered
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        agent = agents[6]
-        is_disabled = (st.session_state.launched_agent is not None and 
-                     st.session_state.launched_agent != agent["page"])
-        if st.button(f"{agent['icon']} {agent['name']}", 
-                   width='stretch', 
-                   disabled=is_disabled, 
-                   type="secondary", 
-                   key=f"agent_6",
-                   help=agent['desc']):
-            if st.session_state.saved_problem:
-                st.session_state.launched_agent = agent["page"]
-                try:
-                    st.switch_page(agent["page"])
-                except Exception as e:
-                    st.error(f"Cannot navigate to {agent['name']}")
-                    st.info(f"Looking for: {agent['page']}")
-                    st.info(f"Make sure file exists at: {os.path.join(os.getcwd(), agent['page'])}")
-            else:
-                st.warning("Please save your business problem details first")
-
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
