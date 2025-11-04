@@ -419,8 +419,6 @@ def call_api(agent_name, problem, context=""):
 
     try:
         response = requests.post(config["url"], headers=headers, json=payload)
-        st.write(f'📬 API Response Status: {response.status_code}')
-        st.write(f'📬 API Response Body: {response.text[:1000]}')
         if response.status_code == 200:
             return sanitize_text(json_to_text(response.json()))
         else:
