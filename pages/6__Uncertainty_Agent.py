@@ -98,31 +98,34 @@ API_CONFIGS = [
             f"Problem statement - {problem}\n\n"
             f"Context from vocabulary:\n{vocab_output}\n\n"
             f"Context from current system:\n{current_system_output}\n\n"
-            "Are there hidden or latent dependencies that could affect outcomes? What is the risk/impact if this problem remains unresolved? Score 0–5. Provide justification."
+            f"Are there hidden or latent dependencies that could affect outcomes?\n\n"
+            f"Score 0–5. Provide justification."
         )
     },
     {
         "name": "Q11",
         "url": "https://eoc.mu-sigma.com/talos-engine/agency/reasoning_api?society_id=1757657318406&agency_id=1758618137301&level=1",
-        "multiround_convo": 2,
+        "multiround_convo": 3,
         "description": "Are feedback loops insufficient or missing, limiting our ability to adapt?",
         "prompt": lambda problem, outputs: (
             f"Problem statement - {problem}\n\n"
             f"Context from vocabulary:\n{vocab_output}\n\n"
             f"Context from current system:\n{current_system_output}\n\n"
-            "How urgent is it to address this problem? Score 0–5. Provide justification."
+            f"How urgent is it to address this problem?\n\n"
+            f"Score 0–5. Provide justification."
         )
     },
     {
         "name": "Q12",
         "url": "https://eoc.mu-sigma.com/talos-engine/agency/reasoning_api?society_id=1757657318406&agency_id=1758619317968&level=1",
-        "multiround_convo": 2,
+        "multiround_convo": 3,
         "description": "Do we lack established benchmarks or \"gold standards\" to validate results?",
         "prompt": lambda problem, outputs: (
             f"Problem statement - {problem}\n\n"
-           f"Context from vocabulary:\n{vocab_output}\n\n"
+            f"Context from vocabulary:\n{vocab_output}\n\n"
             f"Context from current system:\n{current_system_output}\n\n"
-            "How well does solving this problem align with organizational strategy or goals? Score 0–5. Provide justification."
+            f"How well does solving this problem align with organizational strategy or goals?\n\n"
+            f"Score 0–5. Provide justification."
         )
     }
 ]

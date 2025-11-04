@@ -437,7 +437,7 @@ def render_header(
         left: 0;
         right: 0;
         height: {header_height}px;
-        background: linear-gradient(135deg, #8b1e1e 0%, #6b1515 100%);
+        background: linear-gradient(135deg, #8b1e1e 0%, #8b1e1e 100%);
         box-shadow: 0 2px 20px rgba(0,0,0,0.4);
         z-index: 999999;
         display: flex !important;
@@ -785,28 +785,27 @@ def render_header(
        LIGHT MODE THEME STYLES - Clean Headings
        ======================================== */
     body[data-theme="light"] .stApp {{
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+        background: linear-gradient(135deg, #f5f7fa 0%, #f5f7fa 0%) !important;
         color: #1e293b !important;
     }}
 
-    /* Light mode - Clean headings without blur/shadow
-       Updated: force headings to WHITE in light theme for improved contrast */
-    body[data-theme="light"] .stApp h1,
-    body[data-theme="light"] .stApp h2,
-    body[data-theme="light"] .stApp h3,
-    body[data-theme="light"] .stApp h4,
-    body[data-theme="light"] .stApp h5,
-    body[data-theme="light"] .stApp h6 {{
-        color: #ffffff !important;
+    /* Light mode - Clean headings without blur/shadow */
+    body[data-theme="light"] h1,
+    body[data-theme="light"] h2,
+    body[data-theme="light"] h3,
+    body[data-theme="light"] h4,
+    body[data-theme="light"] h5,
+    body[data-theme="light"] h6 {{
+        color: #1e293b !important;
         text-shadow: none !important;
         filter: none !important;
         font-weight: 700 !important;
     }}
 
-    body[data-theme="light"] .stApp .stMarkdown h1,
-    body[data-theme="light"] .stApp .stMarkdown h2,
-    body[data-theme="light"] .stApp .stMarkdown h3 {{
-        color: #ffffff !important;
+    body[data-theme="light"] .stMarkdown h1,
+    body[data-theme="light"] .stMarkdown h2,
+    body[data-theme="light"] .stMarkdown h3 {{
+        color: #1e293b !important;
         text-shadow: none !important;
         filter: none !important;
     }}
@@ -1372,7 +1371,7 @@ def render_admin_panel(admin_password="admin123"):
 
     # Admin section header with styling
     st.markdown("""
-    <div style='background: linear-gradient(135deg, #8b1e1e 0%, #6b1515 100%); 
+    <div style='background: linear-gradient(135deg, #8b1e1e 0%, #8b1e1e 100%); 
                 padding: 20px; 
                 border-radius: 10px; 
                 margin-bottom: 20px; 

@@ -74,6 +74,24 @@ if 'analysis_complete' not in st.session_state:
 if 'validation_attempted' not in st.session_state:
     st.session_state.validation_attempted = False
 
+
+vocab_output = st.session_state.get('vocab_output', '')
+current_system_output = st.session_state.get('current_system_data', '')
+volatility_output = st.session_state.get('volatile_outputs', {})
+ambiguity_output = st.session_state.get('ambiguity_outputs', {})
+interconnectedness_output = st.session_state.get('interconnectedness_outputs', {})
+uncertainty_output = st.session_state.get('uncertainty_outputs', {})
+
+# Aggregate all agent outputs for hardness input
+all_agent_outputs = {
+    'vocabulary': vocab_output,
+    'current_system': current_system_output,
+    'volatility': volatility_output,
+    'ambiguity': ambiguity_output,
+    'interconnectedness': interconnectedness_output,
+    'uncertainty': uncertainty_output
+}
+print(all_agent_outputs)
 # Initialize scoring system
 initialize_scoring_system()
 
@@ -95,12 +113,8 @@ HEADERS_BASE = {"Content-Type": "application/json"}
 def updated_prompt(problem, outputs):
     return (
         f"Problem statement - {problem}\n\n"
-        f"Context from vocabulary:\n{outputs.get('vocabulary', '')}\n\n"
-        f"Context from current system:\n{outputs.get('current_system', '')}\n\n"
-        f"Volatility Analysis:\n{outputs.get('volatility', {}).get('Q1', '')}\n\n"
-        f"Ambiguity Analysis:\n{outputs.get('ambiguity', {}).get('Q4', '')}\n\n"
-        f"Interconnectedness Analysis:\n{outputs.get('interconnectedness', {}).get('Q7', '')}\n\n"
-        f"Uncertainty Analysis:\n{outputs.get('uncertainty', {}).get('Q10', '')}\n\n"
+        f"Context from alla gent outputs:\n{all_agent_outputs}\n\n"
+        
         "Based on the comprehensive analysis of the business problem, provide a hardness assessment with the following sections IN THIS EXACT FORMAT:\n\n"
         "Overall Difficulty Score\n"
         "[Provide a single numerical score between 0-5 based on your assessment of the problem complexity]\n\n"

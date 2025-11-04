@@ -849,13 +849,13 @@ st.markdown("""
     /* DARK MODE DROPDOWN FIXES - COMPREHENSIVE */
     /* Fix all dropdown backgrounds to match text input */
     div[data-baseweb="select"] > div {
-        background-color: #1f2937 !important;
+        background-color: #ffffff !important;
         color: white !important;
         border: 2px solid rgba(255,255,255,0.3) !important;
     }
     
     div[data-baseweb="select"] > div:hover {
-        background-color: #374151 !important;
+        background-color: #ffffff !important;
         border-color: rgba(255,255,255,0.5) !important;
     }
     
@@ -912,8 +912,8 @@ st.markdown("""
     
     /* Style text inputs to match - Additional comments box */
     .stTextInput input {
-        background-color: #1f2937 !important;
-        color: white !important;
+        background-color: #ffffff !important;
+        color: black !important;
         border: 2px solid rgba(255,255,255,0.3) !important;
     }
     

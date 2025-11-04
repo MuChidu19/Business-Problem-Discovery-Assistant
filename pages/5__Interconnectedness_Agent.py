@@ -96,32 +96,35 @@ API_CONFIGS = [
             f"Problem statement - {problem}\n\n"
             f"Context from vocabulary:\n{vocab_output}\n\n"
             f"Context from current system:\n{current_system_output}\n\n"
-            "To what extent are key inputs interdependent? How adequate are current resources (people, budget, technology) to handle the issue? Score 0–5. Provide justification."
+            "To what extent are key inputs interdependent? How adequate are current resources (people, budget, technology) to handle the issue?" 
+            "Score 0–5. Provide justification."
         )
 
     },
     {
         "name": "Q8",
         "url": "https://eoc.mu-sigma.com/talos-engine/agency/reasoning_api?society_id=1757657318406&agency_id=1758616081630&level=1",
-        "multiround_convo": 2,
+        "multiround_convo": 3,
         "description": "How well are the governing rules, functions, and relationships between inputs understood?",
         "prompt": lambda problem, outputs: (
             f"Problem statement - {problem}\n\n"
             f"Context from vocabulary:\n{vocab_output}\n\n"
             f"Context from current system:\n{current_system_output}\n\n"
-            "How complex is the problem in terms of stakeholders, processes, or technology involved? Score 0–5. Provide justification."
+            f"How complex is the problem in terms of stakeholders, processes, or technology involved?\n\n"
+            f"Score 0–5. Provide justification."
         )
     },
     {
         "name": "Q9",
         "url": "https://eoc.mu-sigma.com/talos-engine/agency/reasoning_api?society_id=1757657318406&agency_id=1758616793510&level=1",
-        "multiround_convo": 2,
+        "multiround_convo": 3,
         "description": "Are there any hidden or latent dependencies that could impact outcomes?",
         "prompt": lambda problem, outputs: (
             f"Problem statement - {problem}\n\nContext from Current System:\n"
             f"Context from vocabulary:\n{vocab_output}\n\n"
             f"Context from current system:\n{current_system_output}\n\n"
-            "How dependent is the problem on external factors or third parties? Score 0–5. Provide justification."
+            f"How dependent is the problem on external factors or third parties?\n\n"
+            f"Score 0–5. Provide justification."
         )
     }
 ]
