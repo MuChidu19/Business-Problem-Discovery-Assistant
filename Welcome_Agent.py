@@ -839,13 +839,16 @@ def render_main_app():
 
     # 🔥 FIXED: Correct page paths for Streamlit Cloud
     agents = [
-        {"name": "Vocabulary Agent", "icon": "", "page": "pages/1__Vocabulary_Agent.py", "desc": "Decode industry terminology"},
-        {"name": "Current System Agent", "icon": "", "page": "pages/2__Current_System_Agent.py", "desc": "Analyze existing systems"},
-        {"name": "Volatility Agent", "icon": "", "page": "pages/3__Volatility_Agent.py", "desc": "Track market dynamics"},
-        {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
-        {"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
-        {"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
-    ]        
+    {"name": "Vocabulary Agent", "icon": "", "page": "pages/1__Vocabulary_Agent.py", "desc": "Decode industry terminology"},
+    {"name": "Industry Research Agent", "icon": "", "page": "pages/Industry_Research_Agent.py", "desc": "Analyze the broader industry landscape"},
+    {"name": "Company Research Agent", "icon": "", "page": "pages/Company_Research_Agent.py", "desc": "Understand company operations and performance"},
+    {"name": "Current System Agent", "icon": "", "page": "pages/2__Current_System_Agent.py", "desc": "Analyze existing systems"},
+    {"name": "Volatility Agent", "icon": "", "page": "pages/3__Volatility_Agent.py", "desc": "Track market dynamics"},
+    {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
+    {"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
+    {"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
+]
+        
 
     if st.session_state.launched_agent:
         active_agent = next((agent for agent in agents if agent["page"] == st.session_state.launched_agent), None)
@@ -868,12 +871,12 @@ def render_main_app():
 
     st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
-    # Agent grid - First 6 agents in 2 rows
-    for row in range(2):
+    # Agent grid - First 6 agents in 3 rows
+    for row in range(3):
         cols = st.columns(3)
         for col_idx in range(3):
             agent_idx = row * 3 + col_idx
-            if agent_idx < 6:
+            if agent_idx < 8:
                 agent = agents[agent_idx]
                 with cols[col_idx]:
                     is_disabled = (st.session_state.launched_agent is not None and 
