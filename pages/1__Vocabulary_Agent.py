@@ -849,14 +849,15 @@ st.markdown("""
     /* DARK MODE DROPDOWN FIXES - COMPREHENSIVE */
     /* Fix all dropdown backgrounds to match text input */
     div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: white !important;
-        border: 2px solid rgba(255,255,255,0.3) !important;
+        background-color: white !important;
+        color: #1f2937 !important;
+        border: 2px solid rgba(255,0,0,0.3) !important;
     }
-    
+
     div[data-baseweb="select"] > div:hover {
-        background-color: #ffffff !important;
-        border-color: rgba(255,255,255,0.5) !important;
+        ackground-color: white !important;
+        color: #1f2937 !important;
+        border-color: rgba(255,0,0,0.5) !important;
     }
     
     /* Fix dropdown text color */
@@ -877,7 +878,7 @@ st.markdown("""
     /* FIX DROPDOWN POPOVER BACKGROUND - Make it dark like text inputs */
     [data-baseweb="popover"] {
         background-color: white !important;
-        border: 2px solid rgba(255,255,255,0.3) !important;
+        border: 2px solid rgba(255,0,0,0.5) !important;
     }
     
     /* FIX DROPDOWN OPTIONS LIST BACKGROUND - Make it dark */
@@ -912,8 +913,8 @@ st.markdown("""
     
     /* Style text inputs to match - Additional comments box */
     .stTextInput input {
-        background-color: #ffffff !important;
-        color: black !important;
+        background-color: #1f2937 !important;
+        color: white !important;
         border: 2px solid rgba(255,255,255,0.3) !important;
     }
     
@@ -967,8 +968,6 @@ st.markdown("""
     
     /* Ensure all popover content is dark */
     [data-baseweb="popover"] * {
-        background-color: #1f2937 !important;
-        color: white !important;
     }
     
     /* Specific fix for the options list container */
@@ -978,14 +977,15 @@ st.markdown("""
     
     /* Fix for the individual option items */
     [data-baseweb="popover"] [role="option"] {
-        background-color: #1f2937 !important;
-        color: white !important;
+        background-color: white !important;
+        color: black !important;
     }
     
     [data-baseweb="popover"] [role="option"]:hover {
         background-color: #374151 !important;
         color: white !important;
     }
+    
 </style>
 """, unsafe_allow_html=True)
 # ===============================
