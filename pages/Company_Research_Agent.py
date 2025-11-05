@@ -432,7 +432,6 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
                 submitted = st.form_submit_button("📨 Submit Positive Feedback")
                 if submitted:
                     submit_feedback_record(section=section_choice, feedback_type="Positive", user_id=user_id, additional_feedback="User indicated positive feedback.")
-                    st.experimental_rerun()
 
         elif fb_choice == "I have read it, found some facts or sections to be inaccurate.":
             with st.form("company_feedback_form_inaccurate", clear_on_submit=True):
@@ -450,7 +449,7 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
                         # condense the inaccuracies
                         off_defs_text = " | ".join([line.strip() for line in inaccurate_text.splitlines() if line.strip()]) or "No excerpts provided"
                         submit_feedback_record(section=section_choice, feedback_type="Inaccurate/Issue", user_id=user_id, off_definitions=off_defs_text, additional_feedback=additional)
-                        st.experimental_rerun()
+                        st.rerun()
 
         elif fb_choice == "I have suggestions for improving the research output or format.":
             with st.form("company_feedback_form_suggestions", clear_on_submit=True):
@@ -464,24 +463,15 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
                         st.warning("⚠️ Please provide your suggestions.")
                     else:
                         submit_feedback_record(section=section_choice, feedback_type="Suggestion", user_id=user_id, suggestions=suggestions, additional_feedback=suggestions)
-                        st.experimental_rerun()
+                        st.rerun()
 
     else:
         # Already submitted - show success and option to submit another
         st.markdown('<div class="feedback-success">✅ Thank you! Your feedback has been recorded.</div>', unsafe_allow_html=True)
         if st.button("📝 Submit Another Feedback", key="company_reopen_feedback_btn", use_container_width=True):
             st.session_state.company_feedback_submitted = False
-            st.experimental_rerun()
+            st.rerun()
 
-    # -------------------------
-    # Show Submitted Feedback
-    # -------------------------
-    if st.session_state.company_feedback_records:
-        st.markdown("---")
-        st.markdown("### 🔎 Submitted Feedback (this session)")
-        for idx, fb in enumerate(st.session_state.company_feedback_records[::-1], start=1):
-            st.markdown(f"**{idx}. [{fb['Timestamp']}] Section:** {fb.get('Section','Full Report')}  \n**Type:** {fb.get('FeedbackType')}  \n**Employee:** {fb.get('Employee_id')}  \n**Details:** {fb.get('Feedback') or fb.get('OffDefinitions') or fb.get('Suggestions','-')}")
-    
     # -------------------------
     # Download Report (enabled when any feedback exists)
     # -------------------------
@@ -492,7 +482,7 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
             <div style="margin: 10px 0;">
                 <div class="section-title-box" style="padding: 0.5rem 1rem;">
                     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                        <h3 style="margin:0; color:white; font-weight:700; font-size:1.2rem; line-height:1.2;">📥 Download Company Research & Feedback</h3>
+                        <h3 style="margin:0; color:white; font-weight:700; font-size:1.2rem; line-height:1.2;">📥 Download Company Research </h3>
                     </div>
                 </div>
             </div>
@@ -511,19 +501,10 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
         download_buffer.write(f"Industry: {display_industry}\n\n")
         download_buffer.write("---- RESEARCH OUTPUT ----\n\n")
         download_buffer.write(st.session_state.company_output or "No output\n")
-        download_buffer.write("\n\n---- FEEDBACK SUBMISSIONS ----\n")
 
-        # appended in-memory records first
-        for rec in st.session_state.company_feedback_records:
-            download_buffer.write(f"\nTimestamp: {rec.get('Timestamp')}\nSection: {rec.get('Section')}\nType: {rec.get('FeedbackType')}\nEmployee: {rec.get('Employee_id')}\nOffDefinitions: {rec.get('OffDefinitions')}\nSuggestions: {rec.get('Suggestions')}\nDetails: {rec.get('Feedback')}\n---\n")
-
-        # also include any session-only stored DataFrame (fallback)
-        if 'company_feedback_data' in st.session_state and not st.session_state.company_feedback_data.empty:
-            download_buffer.write("\n\n-- SESSION ONLY SAVED FEEDBACK (CSV fallback) --\n")
-            download_buffer.write(st.session_state.company_feedback_data.to_csv(index=False))
 
         st.download_button(
-            "⬇️ Download Company Research + Feedback (TXT)",
+            "⬇️ Download Company Research Report",
             data=download_buffer.getvalue(),
             file_name=filename,
             mime="text/plain",
