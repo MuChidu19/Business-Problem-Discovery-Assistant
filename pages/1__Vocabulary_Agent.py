@@ -913,7 +913,6 @@ st.markdown("""
     
     /* Style text inputs to match - Additional comments box */
     .stTextInput input {
-        background-color: #1f2937 !important;
         color: white !important;
         border: 2px solid rgba(255,255,255,0.3) !important;
     }
