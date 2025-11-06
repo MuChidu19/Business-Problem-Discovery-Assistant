@@ -1,3 +1,11 @@
+from shared_header import render_header
+
+render_header(
+    agent_name="Vocabulary Agent",
+    agent_subtitle="Extracts and displays business vocabulary from your problem statement",
+    enable_admin_access=True,
+    header_height=85
+)
 def call_api(agent_name, problem, outputs):
     """
     Centralized API call for all agents.

@@ -1,3 +1,11 @@
+from shared_header import render_header
+
+render_header(
+    agent_name="Industry Research Agent",
+    agent_subtitle="Performs research and analysis for the selected industry",
+    enable_admin_access=True,
+    header_height=85
+)
 import streamlit as st
 import streamlit.components.v1 as components
 import os
