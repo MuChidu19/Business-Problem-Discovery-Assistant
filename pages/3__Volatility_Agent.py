@@ -666,36 +666,28 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
     # UPDATED MESSAGE - Agent-specific
     st.markdown("Please share your thoughts or suggestions after reviewing the **volatility analysis**.")
 
-    # Get employee ID from login page
-    def get_user_id():
-        if 'employee_id' in st.session_state and st.session_state.employee_id:
-            return st.session_state.employee_id
-        
-        possible_keys = ['user_id', 'userID', 'user', 'username', 'employee_id', 'EmployeeID']
-        for key in possible_keys:
-            if key in st.session_state and st.session_state[key]:
-                return st.session_state[key]
-        
+    # Standardized: Get employee ID from session or shared data
+    def get_employee_id():
+        for k in ["employee_id", "user_id", "userID", "EmployeeID"]:
+            if k in st.session_state and st.session_state[k]:
+                return st.session_state[k]
         try:
             shared_data = get_shared_data()
-            if shared_data and 'user_id' in shared_data:
-                return shared_data['user_id']
-            if shared_data and 'employee_id' in shared_data:
-                return shared_data['employee_id']
+            if shared_data and "employee_id" in shared_data and shared_data["employee_id"]:
+                return shared_data["employee_id"]
+            if shared_data and "user_id" in shared_data and shared_data["user_id"]:
+                return shared_data["user_id"]
         except:
             pass
-        
-        return 'Not Available'
+        return "Not Available"
 
-    # Get the actual user ID
-    user_id = get_user_id()
+    employee_id = get_employee_id()
 
-    # Updated submit_feedback function call
-    def submit_feedback_wrapper(feedback_type, user_id="", off_definitions="", suggestions="", additional_feedback=""):
-        """Wrapper for submit_feedback to handle employee ID"""
+    # Updated submit_feedback function call (standardized)
+    def submit_feedback_wrapper(feedback_type, employee_id="", off_definitions="", suggestions="", additional_feedback=""):
         return submit_feedback(
             feedback_type=feedback_type,
-            employee_id=user_id,  # Map user_id to employee_id parameter
+            employee_id=employee_id,
             off_definitions=off_definitions,
             suggestions=suggestions,
             additional_feedback=additional_feedback
@@ -721,12 +713,10 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("volatility_feedback_form_positive", clear_on_submit=True):
                 st.info("Thank you for your positive feedback!")
-                # ONLY EMPLOYEE ID - NO OTHER FIELDS
-                st.markdown(f'**Employee ID:** {user_id}')
-                
+                st.markdown(f'**Employee ID:** {employee_id}')
                 submitted = st.form_submit_button("📨 Submit Positive Feedback", type="primary")
                 if submitted:
-                    if submit_feedback_wrapper(fb_choice, user_id=user_id):
+                    if submit_feedback_wrapper(fb_choice, employee_id=employee_id):
                         st.session_state.volatility_feedback_submitted = True
                         st.success("✅ Thank you! Your feedback has been recorded.")
                         st.rerun()
@@ -735,14 +725,9 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
         elif fb_choice == "I have read it, found some analyses to be off.":
             with st.form("volatility_feedback_form_analyses", clear_on_submit=True):
                 st.markdown("**Please select which volatility analyses seem off:**")
-                
-                # ONLY EMPLOYEE ID - NO OTHER FIELDS
-                st.markdown(f'**Employee ID:** {user_id}')
-
-                # Show checkboxes for each volatility question
+                st.markdown(f'**Employee ID:** {employee_id}')
                 st.markdown("### Select problematic analyses:")
                 selected_issues = {}
-                
                 for api_name in st.session_state.volatile_outputs.keys():
                     selected = st.checkbox(
                         f"**{api_name}** - {API_CONFIGS[next(i for i, cfg in enumerate(API_CONFIGS) if cfg['name'] == api_name)]['description']}",
@@ -751,13 +736,11 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
                     )
                     if selected:
                         selected_issues[api_name] = True
-
                 additional_feedback = st.text_input(
                     "Additional comments:",
                     placeholder="Please provide more details about the analysis issues you found...",
                     key="volatility_analyses_additional"
                 )
-
                 submitted = st.form_submit_button("📨 Submit Feedback", type="primary")
                 if submitted:
                     if not selected_issues:
@@ -765,7 +748,7 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
                     else:
                         issues_list = list(selected_issues.keys())
                         off_defs_text = " | ".join(issues_list)
-                        if submit_feedback_wrapper(fb_choice, user_id=user_id, off_definitions=off_defs_text, additional_feedback=additional_feedback):
+                        if submit_feedback_wrapper(fb_choice, employee_id=employee_id, off_definitions=off_defs_text, additional_feedback=additional_feedback):
                             st.session_state.volatility_feedback_submitted = True
                             st.success("✅ Thank you! Your feedback has been recorded.")
                             st.rerun()
@@ -774,10 +757,7 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
         elif fb_choice == "The widget seems interesting, but I have some suggestions on the features.":
             with st.form("volatility_feedback_form_suggestions", clear_on_submit=True):
                 st.markdown("**Please share your suggestions for improvement:**")
-                
-                # ONLY EMPLOYEE ID - NO OTHER FIELDS
-                st.markdown(f'**Employee ID:** {user_id}')
-                
+                st.markdown(f'**Employee ID:** {employee_id}')
                 suggestions = st.text_input(
                     "Your suggestions:",
                     placeholder="What features would you like to see improved or added?",
@@ -788,7 +768,7 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
                     if not suggestions.strip():
                         st.warning("⚠️ Please provide your suggestions.")
                     else:
-                        if submit_feedback_wrapper(fb_choice, user_id=user_id, suggestions=suggestions):
+                        if submit_feedback_wrapper(fb_choice, employee_id=employee_id, suggestions=suggestions):
                             st.session_state.volatility_feedback_submitted = True
                             st.success("✅ Thank you! Your feedback has been recorded.")
                             st.rerun()

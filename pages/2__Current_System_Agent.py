@@ -847,36 +847,30 @@ if st.session_state.current_system_extracted:
     # UPDATED MESSAGE - Agent-specific
     st.markdown("Please share your thoughts or suggestions after reviewing the **current system analysis**.")
 
-    # Get employee ID from login page
-    def get_user_id():
-        if 'employee_id' in st.session_state and st.session_state.employee_id:
-            return st.session_state.employee_id
-        
-        possible_keys = ['user_id', 'userID', 'user', 'username', 'employee_id', 'EmployeeID']
-        for key in possible_keys:
-            if key in st.session_state and st.session_state[key]:
-                return st.session_state[key]
-        
+
+    # Standardized: Get employee ID from session or shared data
+    def get_employee_id():
+        for k in ["employee_id", "user_id", "userID", "EmployeeID"]:
+            if k in st.session_state and st.session_state[k]:
+                return st.session_state[k]
         try:
             shared_data = get_shared_data()
-            if shared_data and 'user_id' in shared_data:
-                return shared_data['user_id']
-            if shared_data and 'employee_id' in shared_data:
-                return shared_data['employee_id']
+            if shared_data and "employee_id" in shared_data and shared_data["employee_id"]:
+                return shared_data["employee_id"]
+            if shared_data and "user_id" in shared_data and shared_data["user_id"]:
+                return shared_data["user_id"]
         except:
             pass
-        
-        return 'Not Available'
+        return "Not Available"
 
-    # Get the actual user ID
-    user_id = get_user_id()
+    employee_id = get_employee_id()
 
-    # Updated submit_feedback function call
-    def submit_feedback_wrapper(feedback_type, user_id="", off_definitions="", suggestions="", additional_feedback=""):
+    # Updated submit_feedback function call (standardized)
+    def submit_feedback_wrapper(feedback_type, employee_id="", off_definitions="", suggestions="", additional_feedback=""):
         """Wrapper for submit_feedback to handle employee ID"""
         return submit_feedback(
             feedback_type=feedback_type,
-            employee_id=user_id,  # Map user_id to employee_id parameter
+            employee_id=employee_id,
             off_definitions=off_definitions,
             suggestions=suggestions,
             additional_feedback=additional_feedback
