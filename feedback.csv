@@ -1,1 +1,5 @@
-Timestamp,employee_id,Feedback,FeedbackType,OffDefinitions,Suggestions,Account,Industry,ProblemStatement,Agent
+Timestamp,Employee_id,Feedback,FeedbackType,OffDefinitions,Suggestions,Account,Industry,ProblemStatement
+2025-11-10 16:57:19,Not Available,,"I have read it, found it useful, thanks.",,,Chevron India,Energy,"Chevron’s manufacturing operations struggle to improve efficiency and reduce downtime because operational data from multiple plants and systems is fragmented, inconsistent, and lacks unified visibility.
+This prevents decision-makers from confidently using the Digital Twin for predictive maintenance, efficiency optimization, and process improvement — keeping the organization reactive instead of proactive."
+2025-11-10 16:57:54,Not Available,,"I have read it, found it useful, thanks.",,,Chevron India,Energy,"Chevron’s manufacturing operations struggle to improve efficiency and reduce downtime because operational data from multiple plants and systems is fragmented, inconsistent, and lacks unified visibility.
+This prevents decision-makers from confidently using the Digital Twin for predictive maintenance, efficiency optimization, and process improvement — keeping the organization reactive instead of proactive."

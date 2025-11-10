@@ -8,7 +8,6 @@ import json
 from datetime import datetime
 import pandas as pd
 import requests
-import markdown2
 
 from shared_header import (
     render_header,
@@ -383,7 +382,7 @@ def format_volatility_with_bold(text, extra_phrases=None):
                 continue
         
         # Default case - regular text
-        paragraph_html.append(f"<span style='color: var(--text-primary);'>{ln}</span>")
+        paragraph_html.append(f"{ln}")
         i += 1
     
     # Group into paragraphs
@@ -401,16 +400,14 @@ def format_volatility_with_bold(text, extra_phrases=None):
     
     # Wrap paragraphs with proper styling
     para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem; color: var(--text-primary);'>{p}</p>"
+        f"{p}"
         for p in final_paragraphs if p.strip()
     ]
     final_html = "\n".join(para_wrapped)
     
     # Clean up excessive line breaks
     formatted_output = f"""
-    <div class="volatility-display">
         {final_html}
-    </div>
     """
     formatted_output = re.sub(r'(<br>\s*){3,}', '<br><br>', formatted_output)
     return formatted_output
