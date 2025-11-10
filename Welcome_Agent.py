@@ -842,6 +842,8 @@ def render_main_app():
     {"name": "Vocabulary Agent", "icon": "", "page": "pages/1__Vocabulary_Agent.py", "desc": "Decode industry terminology"},
     {"name": "Industry Research Agent", "icon": "", "page": "pages/Industry_Research_Agent.py", "desc": "Analyze the broader industry landscape"},
     {"name": "Company Research Agent", "icon": "", "page": "pages/Company_Research_Agent.py", "desc": "Understand company operations and performance"},
+    {"name": "Question Discovery Agent", "icon": "", "page": "pages/Question_Discovery_Agent.py", "desc": "Formulate critical questions"},
+    {"name": "Identify Stakeholders Agent", "icon": "", "page": "pages/Identify_Stakeholders_Agent.py", "desc": "Find key decision-makers"},
     {"name": "Current System Agent", "icon": "", "page": "pages/2__Current_System_Agent.py", "desc": "Analyze existing systems"},
     {"name": "Volatility Agent", "icon": "", "page": "pages/3__Volatility_Agent.py", "desc": "Track market dynamics"},
     {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
@@ -871,12 +873,12 @@ def render_main_app():
 
     st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
-    # Agent grid - First 6 agents in 3 rows
-    for row in range(3):
+    # Agent grid - First 12 agents in 4 rows
+    for row in range(4):
         cols = st.columns(3)
         for col_idx in range(3):
             agent_idx = row * 3 + col_idx
-            if agent_idx < 8:
+            if agent_idx < 10:
                 agent = agents[agent_idx]
                 with cols[col_idx]:
                     is_disabled = (st.session_state.launched_agent is not None and 
