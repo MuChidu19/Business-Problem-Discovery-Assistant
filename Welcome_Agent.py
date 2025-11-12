@@ -826,7 +826,7 @@ def render_main_app():
     
     st.markdown("""
     <div class="section-header-magnetic">
-        <h3 style="color:#1e293b;"> Agent Arsenal</h3>
+        <h3 style="color:#1e293b;"> Select Agent Arsenal</h3>
     </div>
     """, unsafe_allow_html=True)
 
