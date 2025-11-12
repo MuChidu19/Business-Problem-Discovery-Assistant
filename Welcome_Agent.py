@@ -850,7 +850,7 @@ def render_main_app():
     {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
     {"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
     {"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
-    {"name": "Problem Complexity Agent", "icon":"", "page": "pages/Problem_Complexity_Agent.py", "desc": "Reveals hidden complexity"},
+    {"name": "Push the Boundary Agent", "icon":"", "page": "pages/Problem_Complexity_Agent.py", "desc": "Reveals hidden complexity"},
 ]
         
 
