@@ -61,7 +61,7 @@ API_CONFIGS = [
     {
         "name": "analyze_problem_complexity",
         "url": COMPLEXITY_API_URL,
-        "multiround_convo": 3,
+        "multiround_convo": 6,
         "description": "Reveal hidden complexity and reframe problem",
         "prompt": lambda problem, outputs: (
             f"This is the problem statement: {problem}\n\n"
