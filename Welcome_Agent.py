@@ -847,24 +847,7 @@ def render_main_app():
 ]
         
 
-    if st.session_state.launched_agent:
-        active_agent = next((agent for agent in agents if agent["page"] == st.session_state.launched_agent), None)
-        if active_agent:
-            st.markdown(f"""
-            <div class="active-agent-neon">
-                <p class="title">Active: {active_agent['icon']} {active_agent['name']}</p>
-                <p style="color: #64748b; font-weight: 500; margin: 0;">Currently deployed • {active_agent['desc']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col2:
-                if st.button(f"↩️ Return to {active_agent['icon']} {active_agent['name']}", width='stretch', type="primary"):
-                    try:
-                        st.switch_page(active_agent["page"])
-                    except Exception as e:
-                        st.error(f"Navigation error: {str(e)}")
-                        st.info(f"Expected page: {active_agent['page']}")
+    
 
     st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
@@ -876,11 +859,9 @@ def render_main_app():
             if agent_idx < 12:
                 agent = agents[agent_idx]
                 with cols[col_idx]:
-                    is_disabled = (st.session_state.launched_agent is not None and 
-                                 st.session_state.launched_agent != agent["page"])
+
                     if st.button(f"{agent['icon']} {agent['name']}", 
                                width='stretch', 
-                               disabled=is_disabled, 
                                type="secondary", 
                                key=f"agent_{agent_idx}",
                                help=agent['desc']):
@@ -897,15 +878,7 @@ def render_main_app():
 
     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     st.markdown("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("Reset", width='stretch', type="primary"):
-            st.session_state.launched_agent = None
-            st.session_state.edit_confirmed = False
-            st.balloons()
-            st.success("Session reset successfully!")
-            st.rerun()
-
+    
 
 def _render_admin_confirmation():
     """Admin confirmation page"""
