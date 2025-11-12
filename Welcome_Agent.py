@@ -147,7 +147,7 @@ def render_login_page():
         height: 4px;
         background: rgba(255, 107, 53, 0.6);
         border-radius: 50%;
-        animation: float 20s infinite;
+        
     }
     
     @keyframes float {
@@ -349,18 +349,6 @@ def render_login_page():
     }
     </style>
     
-    <!-- Particle System -->
-    <div class="particles">
-        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
-        <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
-        <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
-        <div class="particle" style="left: 40%; animation-delay: 1s;"></div>
-        <div class="particle" style="left: 50%; animation-delay: 3s;"></div>
-        <div class="particle" style="left: 60%; animation-delay: 5s;"></div>
-        <div class="particle" style="left: 70%; animation-delay: 2.5s;"></div>
-        <div class="particle" style="left: 80%; animation-delay: 4.5s;"></div>
-        <div class="particle" style="left: 90%; animation-delay: 1.5s;"></div>
-    </div>
     """, unsafe_allow_html=True)
     
     # Welcome Card in normal flow
@@ -417,7 +405,7 @@ def render_main_app():
                 radial-gradient(at 100% 0%, rgba(255, 107, 53, 0.1) 0px, transparent 50%),
                 radial-gradient(at 100% 100%, rgba(139, 30, 30, 0.1) 0px, transparent 50%),
                 radial-gradient(at 0% 100%, rgba(255, 107, 53, 0.15) 0px, transparent 50%);
-            animation: meshMove 20s ease-in-out infinite;
+            
         }
         
         @keyframes meshMove {
@@ -448,7 +436,7 @@ def render_main_app():
                 inset 0 1px 0 rgba(255, 255, 255, 0.8);
             position: relative;
             overflow: hidden;
-            animation: bannerFloat 4s ease-in-out infinite;
+            
         }
         
         @keyframes bannerFloat {
@@ -464,7 +452,7 @@ def render_main_app():
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            animation: shine 3s infinite;
+            
         }
         
         @keyframes shine {
@@ -491,7 +479,6 @@ def render_main_app():
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: gradientText 3s linear infinite;
             letter-spacing: -1px;
         }
         
@@ -521,15 +508,12 @@ def render_main_app():
             border: 2px solid transparent;
             background-clip: padding-box;
             border-radius: 15px;
-            padding: 1.5rem 2rem;
+            padding: 0.5rem 1rem;
             margin: 2rem 0 1.5rem 0;
             position: relative;
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 
-                0 15px 40px rgba(139, 30, 30, 0.2),
-                0 0 30px rgba(255, 107, 53, 0.3);
+            transform: translateY(-5px) scale(1);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
+            
         }
         
         .section-header-magnetic::before {
@@ -539,11 +523,7 @@ def render_main_app():
             border-radius: 15px;
             background: linear-gradient(135deg, #ff6b35, #8b1e1e, #ff6b35);
             background-size: 200% 200%;
-            animation: borderRotate 4s linear infinite;
             transform: translateY(-5px) scale(1.02);
-            box-shadow: 
-                0 15px 40px rgba(139, 30, 30, 0.2),
-                0 0 30px rgba(255, 107, 53, 0.3);
             z-index: -1;
             opacity: 1;
         }
@@ -563,7 +543,6 @@ def render_main_app():
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            letter-spacing: -0.5px;
         }
         
         [data-theme="dark"] .section-header-magnetic {
@@ -649,7 +628,7 @@ def render_main_app():
             margin: 2rem 0;
             position: relative;
             overflow: hidden;
-            animation: neonPulse 3s ease-in-out infinite;
+            
         }
         
         .active-agent-neon::before {
@@ -659,7 +638,7 @@ def render_main_app():
             border-radius: 20px;
             background: linear-gradient(45deg, #ff6b35, #8b1e1e, #ff6b35);
             background-size: 300% 300%;
-            animation: neonBorder 3s linear infinite;
+            
             z-index: -1;
         }
         
@@ -695,7 +674,6 @@ def render_main_app():
             position: relative;
             background: linear-gradient(135deg, #8b1e1e 0%, #ff6b35 50%, #8b1e1e 100%) !important;
             background-size: 200% auto;
-            animation: cosmicShift 3s linear infinite;
             border: none !important;
             border-radius: 15px !important;
             padding: 1rem 2rem !important;
@@ -719,13 +697,11 @@ def render_main_app():
         }
         
         .stButton > button[kind="primary"]::after {
-            content: '✨';
             position: absolute;
             top: 50%;
             left: -50px;
             transform: translateY(-50%);
             font-size: 1.2rem;
-            animation: sparkleMove 2s ease-in-out infinite;
         }
         
         @keyframes sparkleMove {
@@ -748,7 +724,7 @@ def render_main_app():
             height: 1px !important;
             background: linear-gradient(90deg, transparent, #ff6b35, #8b1e1e, #ff6b35, transparent) !important;
             background-size: 200% 100%;
-            animation: holoDivider 3s linear infinite;
+            
         }
         
         @keyframes holoDivider {
@@ -765,7 +741,7 @@ def render_main_app():
             border-left: 4px solid #ff6b35 !important;
             box-shadow: 0 6px 20px rgba(139, 30, 30, 0.15) !important;
             font-weight: 600 !important;
-            animation: alertGlow 2s ease-in-out infinite;
+            
             padding: 0.8rem !important;
         }
         
@@ -781,7 +757,7 @@ def render_main_app():
         
         /* Smooth Page Load Animation */
         .main > .block-container {
-            animation: pageLoad 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+
         }
         
         @keyframes pageLoad {
@@ -826,7 +802,7 @@ def render_main_app():
     
     st.markdown("""
     <div class="section-header-magnetic">
-        <h3 style="color:#1e293b;"> Select Agent Arsenal</h3>
+        <h3> Select Agent Arsenal</h3>
     </div>
     """, unsafe_allow_html=True)
 
@@ -846,10 +822,6 @@ def render_main_app():
     {"name": "Push the Boundary Agent", "icon":"", "page": "pages/Problem_Complexity_Agent.py", "desc": "Reveals hidden complexity"},
 ]
         
-
-    
-
-    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
     # Agent grid - First 12 agents in 4 rows
     for row in range(3):
@@ -911,7 +883,7 @@ def _render_admin_confirmation():
                 inset 0 1px 0 rgba(255, 255, 255, 0.9);
             position: relative;
             overflow: hidden;
-            animation: confirmEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            
         }
         
         @keyframes confirmEntrance {
@@ -934,7 +906,7 @@ def _render_admin_confirmation():
             height: 4px;
             background: linear-gradient(90deg, #8b1e1e, #ff6b35, #8b1e1e);
             background-size: 200% 100%;
-            animation: borderFlow 3s linear infinite;
+            
         }
         
         @keyframes borderFlow {
@@ -1031,7 +1003,6 @@ def _render_admin_panel():
             width: 200%;
             height: 200%;
             background: radial-gradient(circle, rgba(255,107,53,0.3), transparent 70%);
-            animation: dashRotate 10s linear infinite;
         }
         
         @keyframes dashRotate {

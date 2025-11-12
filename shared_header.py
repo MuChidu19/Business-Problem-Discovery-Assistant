@@ -559,9 +559,8 @@ def render_header(
     .stDownloadButton > button,
     .stButton > button:not(.theme-toggle-btn) {{
         background: linear-gradient(135deg, #8b1e1e 0%, #ff6b35 100%) !important;
-        color: white !important;
+        color: #1e293b !important;
         border: none !important;
-        font-weight: 700 !important;
         border-radius: 10px !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 12px rgba(139,30,30,0.4) !important;
@@ -580,7 +579,7 @@ def render_header(
     button[kind="secondary"]:not(.theme-toggle-btn) {{
         background: transparent !important;
         border: 2px solid #8b1e1e !important;
-        color: #8b1e1e !important;
+        color: #1e293b !important;
         box-shadow: 0 2px 8px rgba(139,30,30,0.2) !important;
     }}
 
@@ -789,8 +788,14 @@ def render_header(
         color: #1e293b !important;
     }}
 
+    body[data-theme="light"]{{
+        color:white,
+        text-shadow: none !important;
+        filter: none !important;
+        font-weight: 700 !important;
+    }}
+    
     /* Light mode - Clean headings without blur/shadow */
-    body[data-theme="light"] h1,
     body[data-theme="light"] h2,
     body[data-theme="light"] h3,
     body[data-theme="light"] h4,
@@ -802,7 +807,6 @@ def render_header(
         font-weight: 700 !important;
     }}
 
-    body[data-theme="light"] .stMarkdown h1,
     body[data-theme="light"] .stMarkdown h2,
     body[data-theme="light"] .stMarkdown h3 {{
         color: #1e293b !important;
@@ -846,11 +850,6 @@ def render_header(
 
     body[data-theme="dark"] .stApp * {{
         color: #f8fafc !important;
-    }}
-
-    /* Keep general app text darker in light theme, but headings are explicitly forced white above */
-    body[data-theme="light"] .stApp * {{
-        color: #1e293b !important;
     }}
 
     /* Remove any text shadows from all elements */
