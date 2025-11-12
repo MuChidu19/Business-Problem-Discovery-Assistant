@@ -850,6 +850,7 @@ def render_main_app():
     {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
     {"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
     {"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
+    {"name": "Problem Complexity Agent", "icon":"", "page": "pages/Problem_Complexity_Agent.py", "desc": "Reveals hidden complexity"},
 ]
         
 
@@ -879,7 +880,7 @@ def render_main_app():
         cols = st.columns(3)
         for col_idx in range(3):
             agent_idx = row * 3 + col_idx
-            if agent_idx < 11:
+            if agent_idx < 12:
                 agent = agents[agent_idx]
                 with cols[col_idx]:
                     is_disabled = (st.session_state.launched_agent is not None and 

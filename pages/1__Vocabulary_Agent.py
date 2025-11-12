@@ -1,4 +1,24 @@
 from shared_header import render_header
+import streamlit as st
+import streamlit.components.v1 as components
+import os
+import re
+import json
+# REMOVE THIS: render_header() - Don't call it here, call it after imports
+from datetime import datetime
+import pandas as pd
+import requests
+from shared_header import (
+    render_header,
+    save_feedback_to_admin_session,  # ADD THIS
+    ACCOUNTS,
+    INDUSTRIES,
+    ACCOUNT_INDUSTRY_MAP,
+    get_shared_data,
+    render_unified_business_inputs,
+    render_unified_admin_panel,  # ADD THIS
+)
+
 
 render_header(
     agent_name="Vocabulary Agent",
@@ -36,26 +56,6 @@ def call_api(agent_name, problem, outputs):
     except Exception as e:
         st.error(f"API Call Failed: {str(e)}")
         return None
-import streamlit as st
-import streamlit.components.v1 as components
-import os
-import re
-import json
-from shared_header import render_header
-# REMOVE THIS: render_header() - Don't call it here, call it after imports
-from datetime import datetime
-import pandas as pd
-import requests
-from shared_header import (
-    render_header,
-    save_feedback_to_admin_session,  # ADD THIS
-    ACCOUNTS,
-    INDUSTRIES,
-    ACCOUNT_INDUSTRY_MAP,
-    get_shared_data,
-    render_unified_business_inputs,
-    render_unified_admin_panel,  # ADD THIS
-)
 
 # --- Page Config ---
 st.set_page_config(
