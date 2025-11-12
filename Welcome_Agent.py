@@ -813,13 +813,6 @@ def render_main_app():
         header_height=85
     )
 
-    # Hero Banner
-    st.markdown("""
-    <div class="hero-banner">
-        <h2>Business Problem Discovery Assistant</h2>
-        <p>Unleash specialized agents to classify your business problems</p>
-    </div>
-    """, unsafe_allow_html=True)
 
     account, industry, problem = render_unified_business_inputs(
         page_key_prefix="main_app",
@@ -876,10 +869,10 @@ def render_main_app():
     st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
     # Agent grid - First 12 agents in 4 rows
-    for row in range(4):
-        cols = st.columns(3)
-        for col_idx in range(3):
-            agent_idx = row * 3 + col_idx
+    for row in range(3):
+        cols = st.columns(4)
+        for col_idx in range(4):
+            agent_idx = col_idx*3 + row                                     
             if agent_idx < 12:
                 agent = agents[agent_idx]
                 with cols[col_idx]:
