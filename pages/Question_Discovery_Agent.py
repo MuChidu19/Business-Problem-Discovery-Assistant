@@ -144,6 +144,20 @@ def sanitize_text(text):
     text = re.sub(r'<\/?[^>]+>', '', text)
     return text.strip()
 
+# FIXED: Pass lines and n to collect_paragraph
+def collect_paragraph(lines, n, start_idx):
+    block = [lines[start_idx]]
+    j = start_idx + 1
+    while j < n:
+        next_line = lines[j]
+        if not next_line.strip():
+            break
+        if re.match(r'^\s*(?:•|\d+\.|-|Section|[A-Z][^:\n]+:)', next_line):
+            break
+        block.append(next_line)
+        j += 1
+    return block, j
+
 def format_questions_html(text):
     """Enhanced: bold headers, clean bullets, proper spacing"""
     if not text:
@@ -152,7 +166,7 @@ def format_questions_html(text):
     t = sanitize_text(text)
     t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
     t = re.sub(r'(?m)^(Section\s+\d+[\s:—–]*)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.IGNORECASE)
-    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)  # e.g. "Key Questions:"
+    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)
 
     lines = t.splitlines()
     n = len(lines)
@@ -187,7 +201,7 @@ def format_questions_html(text):
             continue
 
         # Paragraphs
-        block, j = collect_paragraph(i)
+        block, j = collect_paragraph(lines, n, i)  # PASS lines and n
         paragraph_html.append("<br>".join([b.strip() for b in block if b.strip()]))
         i = j
 
@@ -206,19 +220,6 @@ def format_questions_html(text):
         f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>" for p in final_paragraphs
     ]
     return "\n".join(para_wrapped)
-
-def collect_paragraph(start_idx):
-    block = [lines[start_idx]]
-    j = start_idx + 1
-    while j < n:
-        next_line = lines[j]
-        if not next_line.strip():
-            break
-        if re.match(r'^\s*(?:•|\d+\.|-|Section|[A-Z][^:\n]+:)', next_line):
-            break
-        block.append(next_line)
-        j += 1
-    return block, j
 
 # =========================================
 # CENTRALIZED API CALL
@@ -440,8 +441,9 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
 
     formatted_html = format_questions_html(st.session_state.questions_output)
 
-    st.markdown(f"""
-       <div style="background:var(--bg-card); border:2px solid #0b5f8a; 
+    st.markdown(
+        f"""
+        <div style="background:var(--bg-card); border:2px solid #0b5f8a; 
                    border-radius:16px; padding:1.6rem; margin-bottom:1.6rem; 
                    box-shadow:0 3px 10px rgba(11,95,138,0.15);">
             <h4 style="color:#0b5f8a; font-weight:700; font-size:1.15rem; 
