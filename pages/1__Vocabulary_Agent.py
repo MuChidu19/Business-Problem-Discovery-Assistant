@@ -26,6 +26,13 @@ render_header(
     enable_admin_access=True,
     header_height=85
 )
+hide_sidebar = """
+    <style>
+        [data-testid="stSidebar"] {display: none;}
+    </style>
+"""
+st.markdown(hide_sidebar, unsafe_allow_html=True)
+
 def call_api(agent_name, problem, outputs):
     """
     Centralized API call for all agents.
@@ -306,6 +313,13 @@ def format_vocabulary_with_bold(text, extra_phrases=None):
     ]
     final_html = "\n".join(para_wrapped)
 
+    formatted_output = f"""
+    <div class="vocab-display">
+        {final_html}
+    </div>
+    """
+    formatted_output = re.sub(r'(<br>\s*){3,}', '<br><br>', formatted_output)
+    return formatted_output
     formatted_output = f"""
     <div class="vocab-display">
         {final_html}

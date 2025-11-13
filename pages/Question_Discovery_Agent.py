@@ -1,14 +1,4 @@
-from shared_header import render_header
-
-render_header(
-    agent_name="Question Discovery Agent",
-    agent_subtitle="Generates key discovery questions to deeply understand the business problem",
-    enable_admin_access=True,
-    header_height=85
-)
-
 import streamlit as st
-import streamlit.components.v1 as components
 import os
 import re
 import json
@@ -16,26 +6,30 @@ import io
 from datetime import datetime
 import pandas as pd
 import requests
+
 from shared_header import (
     render_header,
     save_feedback_to_admin_session,
-    ACCOUNTS,
-    INDUSTRIES,
-    ACCOUNT_INDUSTRY_MAP,
     get_shared_data,
     render_unified_business_inputs,
-    render_unified_admin_panel,
 )
 
-# --- Page Config ---
+# =========================================
+# PAGE CONFIG
+# =========================================
 st.set_page_config(
     page_title="Question Discovery Agent",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- Initialize session state ---
-for key, default in {
+# Hide sidebar
+st.markdown("<style>[data-testid='stSidebar'] {display: none;}</style>", unsafe_allow_html=True)
+
+# =========================================
+# SESSION INITIALIZATION - AGENT-SPECIFIC
+# =========================================
+session_defaults = {
     'questions_output': "",
     'show_questions': False,
     'questions_feedback_submitted': False,
@@ -43,19 +37,22 @@ for key, default in {
     'feedback_option': None,
     'analysis_complete': False,
     'validation_attempted': False
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = default
+}
 
-# ===============================
-# API Configuration
-# ===============================
+for key, val in session_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
+
+# =========================================
+# API CONFIGURATION
+# =========================================
 TENANT_ID = "talos"
 HEADERS_BASE = {"Content-Type": "application/json"}
 
 QUESTIONS_API_URL = (
-    "https://eoc.mu-sigma.com/talos-engine/agency/reasoning_api?society_id=1757657318406&agency_id=1760537932172&level=1"
-    )
+    "https://eoc.mu-sigma.com/talos-engine/agency/reasoning_api?"
+    "society_id=1757657318406&agency_id=1760537932172&level=1"
+)
 
 API_CONFIGS = [
     {
@@ -73,13 +70,27 @@ API_CONFIGS = [
     }
 ]
 
-# Feedback file
+# =========================================
+# FILE & AUTH CONFIG
+# =========================================
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 FEEDBACK_FILE = os.path.join(BASE_DIR, "feedback.csv")
 
-# ===============================
-# Auth Token
-# ===============================
+try:
+    if not os.path.exists(FEEDBACK_FILE):
+        df = pd.DataFrame(columns=[
+            "Timestamp", "Employee_id", "Feedback", "FeedbackType",
+            "OffDefinitions", "Suggestions", "Account", "Industry",
+            "ProblemStatement", "Section"
+        ])
+        df.to_csv(FEEDBACK_FILE, index=False)
+except (PermissionError, OSError):
+    if 'feedback_data' not in st.session_state:
+        st.session_state.feedback_data = pd.DataFrame(
+            columns=["Timestamp", "Employee_id", "Feedback", "FeedbackType",
+                     "OffDefinitions", "Suggestions", "Account", "Industry",
+                     "ProblemStatement", "Section"])
+
 def _init_auth_token():
     token = os.environ.get("AUTH_TOKEN", "")
     try:
@@ -92,11 +103,12 @@ def _init_auth_token():
 if 'auth_token' not in st.session_state:
     st.session_state.auth_token = _init_auth_token()
 
-# ===============================
-# Utility Functions
-# ===============================
+# =========================================
+# UTILITY FUNCTIONS
+# =========================================
+
 def json_to_text(data):
-    if data is None:
+    if not data:
         return ""
     if isinstance(data, str):
         return data
@@ -113,7 +125,6 @@ def json_to_text(data):
     if isinstance(data, list):
         return "\n".join(json_to_text(x) for x in data if x)
     return str(data)
-
 
 def sanitize_text(text):
     if not text:
@@ -133,9 +144,86 @@ def sanitize_text(text):
     text = re.sub(r'<\/?[^>]+>', '', text)
     return text.strip()
 
-# ===============================
-# Enhanced API Call
-# ===============================
+def format_questions_html(text):
+    """Enhanced: bold headers, clean bullets, proper spacing"""
+    if not text:
+        return "No questions generated"
+
+    t = sanitize_text(text)
+    t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
+    t = re.sub(r'(?m)^(Section\s+\d+[\s:—–]*)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.IGNORECASE)
+    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)  # e.g. "Key Questions:"
+
+    lines = t.splitlines()
+    n = len(lines)
+    i = 0
+    paragraph_html = []
+
+    while i < n:
+        ln = lines[i].strip()
+        if not ln:
+            i += 1
+            continue
+
+        # Section headers
+        if re.match(r'^Section\s+\d+', ln, flags=re.IGNORECASE):
+            paragraph_html.append(f"<strong>{ln}</strong>")
+            i += 1
+            continue
+
+        # Key labels
+        if re.match(r'^[A-Z][^:\n]+:', ln):
+            paragraph_html.append(f"<strong>{ln}</strong>")
+            i += 1
+            continue
+
+        # Bullet lists
+        if re.match(r'^\s*(?:•|\d+\.|-)\s+', ln):
+            block_lines = []
+            while i < n and re.match(r'^\s*(?:•|\d+\.|-)\s+', lines[i]):
+                block_lines.append(re.sub(r'^\s*(?:•|\d+\.|-)\s+', '• ', lines[i].strip()))
+                i += 1
+            paragraph_html.extend(block_lines)
+            continue
+
+        # Paragraphs
+        block, j = collect_paragraph(i)
+        paragraph_html.append("<br>".join([b.strip() for b in block if b.strip()]))
+        i = j
+
+    final_paragraphs = []
+    temp = []
+    for line in paragraph_html:
+        if line:
+            temp.append(line)
+        elif temp:
+            final_paragraphs.append("<br>".join(temp))
+            temp = []
+    if temp:
+        final_paragraphs.append("<br>".join(temp))
+
+    para_wrapped = [
+        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>" for p in final_paragraphs
+    ]
+    return "\n".join(para_wrapped)
+
+def collect_paragraph(start_idx):
+    block = [lines[start_idx]]
+    j = start_idx + 1
+    while j < n:
+        next_line = lines[j]
+        if not next_line.strip():
+            break
+        if re.match(r'^\s*(?:•|\d+\.|-|Section|[A-Z][^:\n]+:)', next_line):
+            break
+        block.append(next_line)
+        j += 1
+    return block, j
+
+# =========================================
+# CENTRALIZED API CALL
+# =========================================
+
 def call_api(agent_name, problem, outputs):
     config = next((a for a in API_CONFIGS if a["name"] == agent_name), None)
     if not config:
@@ -143,11 +231,9 @@ def call_api(agent_name, problem, outputs):
         return None
 
     prompt = config["prompt"](problem, outputs)
-    if isinstance(prompt, (list, tuple)):
-        prompt = " ".join(prompt)
     payload = {
         "agency_goal": prompt,
-        "multiround_convo": config["multiround_convo"]
+        "multiround_convo": config.get("multiround_convo", 1)
     }
 
     headers = HEADERS_BASE.copy()
@@ -158,104 +244,65 @@ def call_api(agent_name, problem, outputs):
     retries = 3
     for attempt in range(retries):
         try:
-            response = requests.post(
-                config["url"],
-                headers=headers,
-                json=payload,
-                timeout=(15, 180)
-            )
-
+            response = requests.post(config["url"], headers=headers, json=payload, timeout=(15, 180))
             if response.status_code == 200:
                 return sanitize_text(json_to_text(response.json()))
             else:
-                st.warning(f"Attempt {attempt+1}: API Error {response.status_code} - retrying...")
+                st.warning(f"Attempt {attempt+1}: API Error {response.status_code}")
         except requests.exceptions.Timeout:
-            st.warning(f"Attempt {attempt+1}: Timeout - retrying...")
+            st.warning(f"Attempt {attempt+1}: Timeout")
         except Exception as e:
-            st.warning(f"Attempt {attempt+1}: {str(e)} - retrying...")
+            st.warning(f"Attempt {attempt+1}: {str(e)}")
 
-    st.error("API request failed after 3 retries.")
+    st.error("API failed after 3 retries.")
     return None
 
+# =========================================
+# FEEDBACK SYSTEM
+# =========================================
 
-def format_questions_html(text):
+def parse_sections_from_output(text):
     if not text:
-        return "No questions generated"
-    t = sanitize_text(text)
-    t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
-    t = re.sub(r'^(Section\s+\d+:)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.MULTILINE | re.IGNORECASE)
-    t = re.sub(r'^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t, flags=re.MULTILINE)
-    paragraphs = [f"<p style='margin:6px 0; line-height:1.45;'>{p}</p>" for p in t.split('\n\n') if p.strip()]
-    return "\n".join(paragraphs)
-
-# ===============================
-# Feedback System (Extended)
-# ===============================
-def parse_sections_from_output(output_text):
-    if not output_text:
         return ["Full Report"]
-
-    pattern = r'(Section\s+\d+\s*(?:[-—:])\s*.+)'
-    matches = re.findall(pattern, output_text, flags=re.IGNORECASE)
-    matches = [m.strip() for m in matches]
-    seen = set()
+    pattern = r'(Section\s+\d+[\s:—–][^\n]+)'
+    matches = re.findall(pattern, text, flags=re.IGNORECASE)
     unique = []
+    seen = set()
     for m in matches:
         if m.lower() not in seen:
             seen.add(m.lower())
-            unique.append(m)
-    if not unique:
-        return ["Full Report"]
-    return unique
+            unique.append(m.strip())
+    return unique or ["Full Report"]
 
-def get_user_id():
-    if 'employee_id' in st.session_state and st.session_state.employee_id:
-        return st.session_state.employee_id
-    possible_keys = ['user_id', 'userID', 'employee_id', 'EmployeeID']
-    for key in possible_keys:
-        if key in st.session_state and st.session_state[key]:
-            return st.session_state[key]
+def get_employee_id():
+    keys = ["employee_id", "user_id", "userID", "EmployeeID", "user", "username", "email"]
+    for k in keys:
+        if k in st.session_state and st.session_state[k]:
+            return st.session_state[k]
     try:
         shared_data = get_shared_data()
-        if shared_data and 'user_id' in shared_data:
-            return shared_data['user_id']
-        if shared_data and 'employee_id' in shared_data:
-            return shared_data['employee_id']
+        for k in keys:
+            if k in shared_data and shared_data[k]:
+                return shared_data[k]
     except Exception:
         pass
     return "Not Available"
 
-def persist_feedback_to_csv(df):
-    try:
-        if os.path.exists(FEEDBACK_FILE):
-            existing = pd.read_csv(FEEDBACK_FILE)
-            missing = set(df.columns) - set(existing.columns)
-            for c in missing:
-                existing[c] = ''
-            existing = existing[df.columns]
-            updated = pd.concat([existing, df], ignore_index=True)
-        else:
-            updated = df
-        updated.to_csv(FEEDBACK_FILE, index=False)
-        return True
-    except Exception:
-        return False
-
-def submit_feedback_record(section, feedback_type, user_id, off_definitions="", suggestions="", additional_feedback=""):
+def submit_feedback(section, feedback_type, user_id, off_definitions="", suggestions="", additional_feedback=""):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     account = st.session_state.get("current_account", "")
     industry = st.session_state.get("current_industry", "")
-    problem_statement = st.session_state.get("current_problem", "")
+    problem = st.session_state.get("current_problem", "")
 
     feedback_data = {
         "Employee_id": user_id,
-        "Feedback": additional_feedback or "",
+        "Feedback": additional_feedback,
         "FeedbackType": feedback_type,
-        "OffDefinitions": off_definitions or "",
-        "Suggestions": suggestions or "",
+        "OffDefinitions": off_definitions,
+        "Suggestions": suggestions,
         "Account": account,
         "Industry": industry,
-        "ProblemStatement": problem_statement,
+        "ProblemStatement": problem,
         "Section": section,
         "Timestamp": timestamp
     }
@@ -265,33 +312,45 @@ def submit_feedback_record(section, feedback_type, user_id, off_definitions="", 
     except Exception:
         pass
 
-    df = pd.DataFrame([[
-        timestamp,
-        user_id,
-        additional_feedback or "",
-        feedback_type,
-        off_definitions or "",
-        suggestions or "",
-        account,
-        industry,
-        problem_statement,
-        section
-    ]], columns=["Timestamp","Employee_id","Feedback","FeedbackType","OffDefinitions","Suggestions","Account","Industry","ProblemStatement","Section"])
+    columns = ["Timestamp", "Employee_id", "Feedback", "FeedbackType",
+               "OffDefinitions", "Suggestions", "Account", "Industry",
+               "ProblemStatement", "Section"]
 
-    saved = persist_feedback_to_csv(df)
-    if not saved:
-        if 'questions_feedback_data' not in st.session_state:
-            st.session_state.questions_feedback_data = pd.DataFrame(columns=df.columns)
-        st.session_state.questions_feedback_data = pd.concat([st.session_state.questions_feedback_data, df], ignore_index=True)
-        st.info("Feedback stored in session (couldn't write to disk).")
+    row = [timestamp, user_id, additional_feedback, feedback_type,
+           off_definitions, suggestions, account, industry, problem, section]
+
+    entry = pd.DataFrame([row], columns=columns)
+
+    try:
+        if os.path.exists(FEEDBACK_FILE):
+            df = pd.read_csv(FEEDBACK_FILE)
+            for c in columns:
+                if c not in df.columns:
+                    df[c] = ""
+            df = df[columns]
+            df = pd.concat([df, entry], ignore_index=True)
+        else:
+            df = entry
+        df.to_csv(FEEDBACK_FILE, index=False)
+    except Exception:
+        if "questions_feedback_data" not in st.session_state:
+            st.session_state.questions_feedback_data = pd.DataFrame(columns=columns)
+        st.session_state.questions_feedback_data = pd.concat([st.session_state.questions_feedback_data, entry], ignore_index=True)
 
     st.session_state.questions_feedback_records.append(feedback_data)
     st.session_state.questions_feedback_submitted = True
     return True
 
-# ===============================
-# Main UI
-# ===============================
+# =========================================
+# UI RENDERING
+# =========================================
+render_header(
+    agent_name="Question Discovery Agent",
+    agent_subtitle="Generates key discovery questions to deeply understand the business problem",
+    enable_admin_access=True,
+    header_height=85
+)
+
 shared = get_shared_data()
 account = shared.get("account") or ""
 industry = shared.get("industry") or ""
@@ -300,6 +359,14 @@ problem = shared.get("problem") or ""
 st.session_state.current_account = account
 st.session_state.current_industry = industry
 st.session_state.current_problem = problem
+
+def _norm_display(val, fallback):
+    if not val or val in ("Select Account", "Select Industry", "Select Problem"):
+        return fallback
+    return val
+
+display_account = _norm_display(account, "Unknown Company")
+display_industry = _norm_display(industry, "Unknown Industry")
 
 account, industry, problem = render_unified_business_inputs(
     page_key_prefix="questions",
@@ -315,10 +382,14 @@ has_account = account and account != "Select Account"
 has_industry = industry and industry != "Select Industry"
 has_problem = bool(problem.strip())
 
-extract_btn = st.button("Discover Questions", type="primary", use_container_width=True,
-                        disabled=not (has_account and has_problem))
+analyze_btn = st.button(
+    "Discover Questions",
+    type="primary",
+    use_container_width=True,
+    disabled=not (has_account and has_problem)
+)
 
-if extract_btn:
+if analyze_btn:
     st.session_state.validation_attempted = True
     if not has_account or not has_industry or not has_problem:
         st.error("Please complete all inputs before proceeding.")
@@ -341,25 +412,23 @@ if extract_btn:
             st.session_state.analysis_complete = True
             st.success("Discovery questions generated!")
         else:
-            st.session_state.questions_output = "API Error or no data returned"
+            st.session_state.questions_output = "No data returned"
             st.session_state.show_questions = True
-            st.error("API request failed")
+            st.error("Failed to retrieve data.")
 
-# ===============================
-# Display Results + Feedback UI
-# ===============================
+# =========================================
+# DISPLAY RESULTS
+# =========================================
 if st.session_state.get("show_questions") and st.session_state.get("questions_output"):
     st.markdown("---")
-    display_account = account or "Unknown Company"
-    display_industry = industry or "Unknown Industry"
 
     st.markdown(
         f"""
-        <div style="margin: 20px 0;">
-            <div class="section-title-box" style="padding: 1rem 1.5rem;">
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                    <h3 style="margin-bottom:8px; color:white; font-weight:800; font-size:1.4rem;">Discovery Questions</h3>
-                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.5; text-align:center; max-width: 900px;">
+        <div style="margin:20px 0;">
+            <div class="section-title-box" style="padding:1rem 1.5rem; background:#0b5f8a; border-radius:12px;">
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:white;">
+                    <h3 style="margin:0; font-weight:800; font-size:1.4rem;">Discovery Questions</h3>
+                    <p style="font-size:0.95rem; margin:8px 0 0; max-width:900px; text-align:center;">
                         AI-generated questions to uncover root causes and clarify <strong>{display_account}</strong>'s challenge in <strong>{display_industry}</strong>.
                     </p>
                 </div>
@@ -369,34 +438,25 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
         unsafe_allow_html=True,
     )
 
-    formatted = format_questions_html(st.session_state.questions_output)
+    formatted_html = format_questions_html(st.session_state.questions_output)
 
-    st.markdown(
-        f"""
-        <div style="
-            background: var(--bg-card);
-            border: 2px solid #0b5f8a;
-            border-radius: 12px;
-            padding: 1.6rem;
-            margin-bottom: 1.6rem;
-        ">
-            <h4 style="color: #0b5f8a; font-weight:700; font-size:1.1rem; margin:0 0 1rem 0;">Generated Questions</h4>
-            <div style="color: var(--text-primary); line-height:1.4; font-size:0.98rem; text-align:left;">
-                {formatted}
-            </div>
+    st.markdown(f"""
+       <div style="background:var(--bg-card); border:2px solid #0b5f8a; 
+                   border-radius:16px; padding:1.6rem; margin-bottom:1.6rem; 
+                   box-shadow:0 3px 10px rgba(11,95,138,0.15);">
+            <h4 style="color:#0b5f8a; font-weight:700; font-size:1.15rem; 
+                      margin:0 0 1rem; border-bottom:2px solid #0b5f8a; 
+                      padding-bottom:0.5rem;">
+                Generated Questions
+            </h4>
+            {formatted_html}
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    # Parse sections
     sections = parse_sections_from_output(st.session_state.questions_output)
-
-    st.markdown("---")
-    st.markdown('<div class="section-title-box" style="text-align:center;"><h3>User Feedback</h3></div>', unsafe_allow_html=True)
-    st.markdown("Please share your thoughts after reviewing the discovery questions.")
-
-    user_id = get_user_id()
+    employee_id = get_employee_id()
 
     if not st.session_state.get('questions_feedback_submitted', False):
         fb_choice = st.radio(
@@ -406,48 +466,43 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
                 "I have read it, found some questions to be irrelevant or unclear.",
                 "I have suggestions for improving the question generation.",
             ],
+            index=None,
             key="questions_feedback_radio",
         )
-        st.session_state.feedback_option = fb_choice
 
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("questions_feedback_form_positive", clear_on_submit=True):
-                st.info("Thank you for your positive feedback!")
-                st.markdown(f'**Employee ID:** {user_id}')
-                section_choice = st.selectbox("Which section is this feedback for?", options=sections, index=0)
-                submitted = st.form_submit_button("Submit Positive Feedback")
-                if submitted:
-                    submit_feedback_record(section=section_choice, feedback_type="Positive", user_id=user_id, additional_feedback="User indicated positive feedback.")
+                st.markdown(f'**Employee ID:** {employee_id}')
+                section = st.selectbox("Feedback for section:", options=sections, index=0)
+                if st.form_submit_button("Submit Positive Feedback"):
+                    submit_feedback(section, "Positive", employee_id, additional_feedback="Useful")
+                    st.rerun()
 
         elif fb_choice == "I have read it, found some questions to be irrelevant or unclear.":
             with st.form("questions_feedback_form_inaccurate", clear_on_submit=True):
-                st.markdown("**Please indicate which questions seem off:**")
-                st.markdown(f'**Employee ID:** {user_id}')
-                section_choice = st.selectbox("Select Section", options=sections, index=0)
-                inaccurate_text = st.text_area("Paste question numbers or text (one per line):", height=140)
-                additional = st.text_input("Additional comments (optional):")
-                submitted = st.form_submit_button("Submit Feedback")
-                if submitted:
-                    if not inaccurate_text.strip() and not additional.strip():
+                st.markdown(f'**Employee ID:** {employee_id}')
+                section = st.selectbox("Select Section", options=sections, index=0)
+                inaccurate = st.text_area("Paste question numbers or text (one per line):", height=140)
+                additional = st.text_input("Additional comments:")
+                if st.form_submit_button("Submit Feedback"):
+                    if not inaccurate.strip() and not additional.strip():
                         st.warning("Please provide details.")
                     else:
-                        off_defs_text = " | ".join([line.strip() for line in inaccurate_text.splitlines() if line.strip()]) or "No excerpts"
-                        submit_feedback_record(section=section_choice, feedback_type="Inaccurate/Issue", user_id=user_id, off_definitions=off_defs_text, additional_feedback=additional)
+                        off_defs = " | ".join([l.strip() for l in inaccurate.splitlines() if l.strip()]) or "No excerpts"
+                        submit_feedback(section, "Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
                         st.rerun()
 
         elif fb_choice == "I have suggestions for improving the question generation.":
             with st.form("questions_feedback_form_suggestions", clear_on_submit=True):
-                st.markdown("**Please share your suggestions:**")
-                st.markdown(f'**Employee ID:** {user_id}')
-                section_choice = st.selectbox("Which section is your suggestion about?", options=sections, index=0, key="questions_sugg_section")
+                st.markdown(f'**Employee ID:** {employee_id}')
+                section = st.selectbox("Suggestion for section:", options=sections, index=0)
                 suggestions = st.text_area("Your suggestions:", height=140)
-                submitted = st.form_submit_button("Submit Feedback")
-                if submitted:
-                    if not suggestions.strip():
-                        st.warning("Please provide your suggestions.")
-                    else:
-                        submit_feedback_record(section=section_choice, feedback_type="Suggestion", user_id=user_id, suggestions=suggestions, additional_feedback=suggestions)
+                if st.form_submit_button("Submit Feedback"):
+                    if suggestions.strip():
+                        submit_feedback(section, "Suggestion", employee_id, suggestions=suggestions)
                         st.rerun()
+                    else:
+                        st.warning("Please provide suggestions.")
 
     else:
         st.markdown('<div class="feedback-success">Thank you! Your feedback has been recorded.</div>', unsafe_allow_html=True)
@@ -455,7 +510,9 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
             st.session_state.questions_feedback_submitted = False
             st.rerun()
 
-    # Download Report
+    # =========================================
+    # DOWNLOAD SECTION
+    # =========================================
     if st.session_state.questions_feedback_records or ('questions_feedback_data' in st.session_state and not st.session_state.questions_feedback_data.empty):
         st.markdown("---")
         st.markdown(
@@ -463,7 +520,7 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
             <div style="margin: 10px 0;">
                 <div class="section-title-box" style="padding: 0.5rem 1rem;">
                     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                        <h3 style="margin:0; color:white; font-weight:700; font-size:1.2rem; line-height:1.2;">Download Discovery Questions</h3>
+                        <h3 style="margin:0; color:white; font-weight:700; font-size:1.2rem;">Download Discovery Questions</h3>
                     </div>
                 </div>
             </div>
@@ -472,27 +529,27 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
         )
 
         ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"discovery_questions_{display_account.replace(' ','_')}_{ts}.txt" if display_account else f"discovery_questions_{ts}.txt"
+        filename = f"discovery_questions_{display_account.replace(' ', '_')}_{ts}.txt"
 
-        download_buffer = io.StringIO()
-        download_buffer.write("DISCOVERY QUESTIONS REPORT\n")
-        download_buffer.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        download_buffer.write(f"Company: {display_account}\n")
-        download_buffer.write(f"Industry: {display_industry}\n\n")
-        download_buffer.write("---- GENERATED QUESTIONS ----\n\n")
-        download_buffer.write(st.session_state.questions_output or "No output\n")
+        buffer = io.StringIO()
+        buffer.write("DISCOVERY QUESTIONS REPORT\n")
+        buffer.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        buffer.write(f"Company: {display_account}\n")
+        buffer.write(f"Industry: {display_industry}\n\n")
+        buffer.write("GENERATED QUESTIONS\n\n")
+        buffer.write(st.session_state.questions_output or "No output")
 
         st.download_button(
-            "Download Discovery Questions",
-            data=download_buffer.getvalue(),
+            "Download Discovery Questions Report",
+            data=buffer.getvalue(),
             file_name=filename,
             mime="text/plain",
             use_container_width=True
         )
 
-# ===============================
-# Back Button
-# ===============================
+# =========================================
+# BACK BUTTON
+# =========================================
 st.markdown("---")
 if st.button("Back to Main Page", use_container_width=True):
     st.switch_page("Welcome_Agent.py")

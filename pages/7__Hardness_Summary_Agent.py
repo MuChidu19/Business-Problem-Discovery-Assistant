@@ -59,6 +59,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+hide_sidebar = """
+    <style>
+        [data-testid="stSidebar"] {display: none;}
+    </style>
+"""
+st.markdown(hide_sidebar, unsafe_allow_html=True)
 
 # --- Initialize session state ---
 if 'hardness_outputs' not in st.session_state:

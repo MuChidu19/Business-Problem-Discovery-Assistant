@@ -17,8 +17,14 @@ st.set_page_config(
     page_title="Business Problem Discovery Assistant",
     layout="wide",
     initial_sidebar_state="collapsed"
+    
 )
-
+hide_sidebar = """
+    <style>
+        [data-testid="stSidebar"] {display: none;}
+    </style>
+"""
+st.markdown(hide_sidebar, unsafe_allow_html=True)
 # --- Session State Initialization ---
 if 'page' not in st.session_state:
     st.session_state.page = "login"
