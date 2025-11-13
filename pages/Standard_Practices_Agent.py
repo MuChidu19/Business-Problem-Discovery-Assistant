@@ -23,11 +23,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hide sidebar
 st.markdown("<style>[data-testid='stSidebar'] {display: none;}</style>", unsafe_allow_html=True)
 
 # =========================================
-# SESSION INITIALIZATION - AGENT-SPECIFIC
+# SESSION INITIALIZATION
 # =========================================
 session_defaults = {
     'standard_output': "",
@@ -78,22 +77,17 @@ API_CONFIGS = [
 # FILE & AUTH CONFIG
 # =========================================
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-FEEDBACK_FILE = os.path.join(BASE_DIR, "feedback.csv")
+FEEDBACK_FILE = os.path.join(BASE_DIR  , "feedback.csv")
 
 try:
     if not os.path.exists(FEEDBACK_FILE):
-        df = pd.DataFrame(columns=[
+        pd.DataFrame(columns=[
             "Timestamp", "Employee_id", "Feedback", "FeedbackType",
             "OffDefinitions", "Suggestions", "Account", "Industry",
             "ProblemStatement", "Section"
-        ])
-        df.to_csv(FEEDBACK_FILE, index=False)
-except (PermissionError, OSError):
-    if 'feedback_data' not in st.session_state:
-        st.session_state.feedback_data = pd.DataFrame(
-            columns=["Timestamp", "Employee_id", "Feedback", "FeedbackType",
-                     "OffDefinitions", "Suggestions", "Account", "Industry",
-                     "ProblemStatement", "Section"])
+        ]).to_csv(FEEDBACK_FILE, index=False)
+except:
+    pass
 
 def _init_auth_token():
     token = os.environ.get("AUTH_TOKEN", "")
@@ -147,6 +141,9 @@ def sanitize_text(text):
     text = re.sub(r'<\/?[^>]+>', '', text)
     return text.strip()
 
+# =========================================
+# FIXED: format_standard_html + collect_paragraph
+# =========================================
 def format_standard_html(text):
     """Enhanced: bold headers, clean bullets, proper spacing"""
     if not text:
@@ -155,7 +152,7 @@ def format_standard_html(text):
     t = sanitize_text(text)
     t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
     t = re.sub(r'(?m)^(Section\s+\d+[\s:—–]*)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.IGNORECASE)
-    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)  # e.g. "Industry Standards:"
+    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)
 
     lines = t.splitlines()
     n = len(lines)
@@ -168,19 +165,16 @@ def format_standard_html(text):
             i += 1
             continue
 
-        # Section headers
         if re.match(r'^Section\s+\d+', ln, flags=re.IGNORECASE):
             paragraph_html.append(f"<strong>{ln}</strong>")
             i += 1
             continue
 
-        # Key labels
         if re.match(r'^[A-Z][^:\n]+:', ln):
             paragraph_html.append(f"<strong>{ln}</strong>")
             i += 1
             continue
 
-        # Bullet lists
         if re.match(r'^\s*(?:•|\d+\.|-)\s+', ln):
             block_lines = []
             while i < n and re.match(r'^\s*(?:•|\d+\.|-)\s+', lines[i]):
@@ -189,8 +183,7 @@ def format_standard_html(text):
             paragraph_html.extend(block_lines)
             continue
 
-        # Paragraphs
-        block, j = collect_paragraph(i)
+        block, j = collect_paragraph(lines, n, i)
         paragraph_html.append("<br>".join([b.strip() for b in block if b.strip()]))
         i = j
 
@@ -210,7 +203,8 @@ def format_standard_html(text):
     ]
     return "\n".join(para_wrapped)
 
-def collect_paragraph(start_idx):
+
+def collect_paragraph(lines, n, start_idx):
     block = [lines[start_idx]]
     j = start_idx + 1
     while j < n:
@@ -226,7 +220,6 @@ def collect_paragraph(start_idx):
 # =========================================
 # CENTRALIZED API CALL
 # =========================================
-
 def call_api(agent_name, problem, outputs):
     config = next((a for a in API_CONFIGS if a["name"] == agent_name), None)
     if not config:
@@ -244,16 +237,13 @@ def call_api(agent_name, problem, outputs):
     if st.session_state.auth_token:
         headers["Authorization"] = f"Bearer {st.session_state.auth_token}"
 
-    retries = 3
-    for attempt in range(retries):
+    for attempt in range(3):
         try:
             response = requests.post(config["url"], headers=headers, json=payload, timeout=(15, 180))
             if response.status_code == 200:
                 return sanitize_text(json_to_text(response.json()))
             else:
                 st.warning(f"Attempt {attempt+1}: API Error {response.status_code}")
-        except requests.exceptions.Timeout:
-            st.warning(f"Attempt {attempt+1}: Timeout")
         except Exception as e:
             st.warning(f"Attempt {attempt+1}: {str(e)}")
 
@@ -263,7 +253,6 @@ def call_api(agent_name, problem, outputs):
 # =========================================
 # FEEDBACK SYSTEM
 # =========================================
-
 def parse_sections_from_output(text):
     if not text:
         return ["Full Report"]
@@ -513,9 +502,6 @@ if st.session_state.get("show_standard") and st.session_state.get("standard_outp
             st.session_state.standard_feedback_submitted = False
             st.rerun()
 
-    # =========================================
-    # DOWNLOAD SECTION
-    # =========================================
     if st.session_state.standard_feedback_records or ('standard_feedback_data' in st.session_state and not st.session_state.standard_feedback_data.empty):
         st.markdown("---")
         st.markdown(
