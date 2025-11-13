@@ -724,8 +724,6 @@ if st.session_state.get("show_uncertainty") and st.session_state.get("uncertaint
         # Feedback form 1: Positive feedback
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("uncertainty_feedback_form_positive", clear_on_submit=True):
-                st.info("Thank you for your positive feedback!")
-                
                 st.markdown(f'**Employee ID:** {user_id}')
 
                 submitted = st.form_submit_button("📨 Submit Positive Feedback", type="primary")

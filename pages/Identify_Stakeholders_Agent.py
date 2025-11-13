@@ -413,7 +413,6 @@ if st.session_state.get("show_stakeholders") and st.session_state.get("stakehold
 
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("stakeholders_feedback_form_positive", clear_on_submit=True):
-                st.info("Thank you for your positive feedback!")
                 st.markdown(f'**Employee ID:** {user_id}')
                 section_choice = st.selectbox("Which section is this feedback for?", options=sections, index=0)
                 submitted = st.form_submit_button("Submit Positive Feedback")

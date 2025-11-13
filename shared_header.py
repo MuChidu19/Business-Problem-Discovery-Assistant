@@ -444,7 +444,6 @@ def render_header(
         align-items: center;
         justify-content: space-between;
         padding: 0 2rem;
-        border-bottom: 3px solid #ff6b35;
     }}
 
     .header-logo {{
@@ -827,7 +826,7 @@ def render_header(
     .section-title-box {{
         background: linear-gradient(135deg, #8b1e1e 0%, #ff6b35 100%) !important;
         border-radius: 10px;
-        padding: 1rem 2rem;
+        padding: rem 2rem;
         margin: 0 0 1rem 0 !important;
         text-align: center;
         box-shadow: 0 4px 12px rgba(139,30,30,0.3);

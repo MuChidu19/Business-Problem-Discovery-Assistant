@@ -850,7 +850,7 @@ if st.session_state.current_system_extracted:
             # Feedback form 1: Positive feedback - SIMPLIFIED
             if fb_choice == "I have read it, found it useful, thanks.":
                 with st.form("current_system_feedback_form_positive", clear_on_submit=True):
-                    st.info("Thank you for your positive feedback!")
+    
                     # ONLY EMPLOYEE ID - NO OTHER FIELDS
                     st.markdown(f'**Employee ID:** {user_id}')
                     

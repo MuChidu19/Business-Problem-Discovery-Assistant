@@ -225,7 +225,7 @@ def render_login_page():
     
     /* Input Styling */
     .stTextInput label {
-        color: rgba(255, 255, 255, 0.95) !important;
+        color: rgb(49, 51, 63)!important;
         font-weight: 700 !important;
         font-size: 0.85rem !important;
         text-transform: uppercase;
@@ -823,11 +823,11 @@ def render_main_app():
 ]
         
 
-    # Agent grid - First 12 agents in 4 rows
+    # Agent grid - First 12 agents in 3 rows
     for row in range(3):
         cols = st.columns(4)
         for col_idx in range(4):
-            agent_idx = col_idx*3 + row                                     
+            agent_idx = row * 4 + col_idx                                   
             if agent_idx < 12:
                 agent = agents[agent_idx]
                 with cols[col_idx]:

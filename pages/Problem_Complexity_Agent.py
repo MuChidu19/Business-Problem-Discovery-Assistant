@@ -391,19 +391,14 @@ if st.session_state.get("show_complexity") and st.session_state.get("complexity_
 
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("complexity_feedback_form_positive", clear_on_submit=True):
-                st.info("Thank you for your feedback!")
                 st.markdown(f'**Employee ID:** {user_id}')
-                section_choice = st.selectbox("Section", options=sections, index=0)
                 submitted = st.form_submit_button("Submit Positive Feedback")
-                if submitted:
-                    submit_feedback_record(section=section_choice, feedback_type="Positive", user_id=user_id)
 
         elif fb_choice == "I have read it, found some insights or reframing to be unclear or off.":
             with st.form("complexity_feedback_form_inaccurate", clear_on_submit=True):
                 st.markdown("**Please highlight unclear parts:**")
                 st.markdown(f'**Employee ID:** {user_id}')
-                section_choice = st.selectbox("Select Section", options=sections, index=0)
-                inaccurate_text = st.text_area("Paste text (one per line):", height=140)
+                inaccurate_text = st.text_area("Paste text (one per line):", height=60)
                 additional = st.text_input("Comments (optional):")
                 submitted = st.form_submit_button("Submit Feedback")
                 if submitted:
@@ -411,15 +406,16 @@ if st.session_state.get("show_complexity") and st.session_state.get("complexity_
                         st.warning("Please provide details.")
                     else:
                         off_text = " | ".join([l.strip() for l in inaccurate_text.splitlines() if l.strip()])
-                        submit_feedback_record(section=section_choice, feedback_type="Inaccurate/Issue", user_id=user_id, off_definitions=off_text, additional_feedback=additional)
+                        submit_feedback_record( feedback_type="Inaccurate/Issue", user_id=user_id, off_definitions=off_text, additional_feedback=additional)
                         st.rerun()
+
+                        
 
         elif fb_choice == "I have suggestions for improving the complexity analysis.":
             with st.form("complexity_feedback_form_suggestions", clear_on_submit=True):
                 st.markdown("**Your suggestions:**")
                 st.markdown(f'**Employee ID:** {user_id}')
-                section_choice = st.selectbox("Section", options=sections, index=0, key="comp_sugg_sec")
-                suggestions = st.text_area("Suggestions:", height=140)
+                suggestions = st.text_input("Suggestions:")
                 submitted = st.form_submit_button("Submit Feedback")
                 if submitted:
                     if not suggestions.strip():

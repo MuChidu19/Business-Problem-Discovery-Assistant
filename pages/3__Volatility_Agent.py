@@ -701,7 +701,6 @@ if st.session_state.get("show_volatility") and st.session_state.get("volatile_ou
         
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("volatility_feedback_form_positive", clear_on_submit=True):
-                st.info("Thank you for your positive feedback!")
                 st.markdown(f'**Employee ID:** {employee_id}')
                 
                 if st.form_submit_button("Submit Positive Feedback"):

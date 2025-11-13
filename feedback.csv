@@ -1,1 +1,3 @@
-Timestamp,employee_id,Feedback,FeedbackType,OffDefinitions,Suggestions,Account,Industry,ProblemStatement,Agent
+Timestamp,Employee_id,Feedback,FeedbackType,OffDefinitions,Suggestions,Account,Industry,ProblemStatement
+2025-11-13 13:45:22,T1721,,"I have read it, found it useful, thanks.",,,Abbott Ireland,Pharma,"class=""section-title-box""class=""section-title-box""class=""section-title-box""class=""section-title-box""class=""section-title-box""class=""section-title-box"""
+2025-11-13 14:42:41,T1721,,"I have read it, found it useful, thanks.",,,Abbott Ireland,Pharma," The widget seems interesting, but I have some suggestions on the features.The widget seems interesting, but I have some suggestions on the features.The widget seems interesting, but I have some suggestions on the features.The widget seems interesting, but I have some suggestions on the features."

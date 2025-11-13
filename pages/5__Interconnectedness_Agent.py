@@ -733,8 +733,6 @@ if st.session_state.get("show_interconnectedness") and st.session_state.get("int
         # Feedback form 1: Positive feedback
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("feedback_form_positive", clear_on_submit=True):
-                st.info(
-                    "Thank you for your positive feedback!")
                 # ONLY EMPLOYEE ID - NO OTHER FIELDS
                 st.markdown(f'**Employee ID:** {user_id}')
                 
