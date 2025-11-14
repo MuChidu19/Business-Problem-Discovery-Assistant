@@ -1,4 +1,4 @@
-def call_api(agent_name, problem, outputs):
+﻿def call_api(agent_name, problem, outputs):
     """
     Centralized API call for all agents.
     - agent_name: string, matches the 'name' in API_CONFIGS
@@ -50,7 +50,10 @@ from shared_header import (
     get_overall_hardness_score,
     get_agent_progress,
     get_all_question_scores,
-    DIMENSION_QUESTIONS
+    DIMENSION_QUESTIONS,
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 
 # --- Page Config ---
@@ -178,50 +181,13 @@ if 'auth_token' not in st.session_state:
 # ===============================
 
 def json_to_text(data):
-    """Extract text from JSON response"""
-    if data is None:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text", "answer", "response"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        # Try to extract any string values
-        for value in data.values():
-            if isinstance(value, str) and len(value) > 10:
-                return value
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def sanitize_text(text):
-    """Remove markdown artifacts and clean up text"""
-    if not text:
-        return ""
-
-    # Fix the "s" character issue
-    text = re.sub(r'^\s*s\s+', '', text.strip())
-    text = re.sub(r'\n\s*s\s+', '\n', text)
-
-    text = re.sub(r'Q\d+\s*Answer\s*Explanation\s*:',
-                  '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    text = re.sub(r'& Key Takeaway:', 'Key Takeaway:', text)
-
-    return text.strip()
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    return base
 
 def extract_hardness_score(text):
     """Extract the hardness score from the API response"""
@@ -283,43 +249,12 @@ def extract_hardness_classification(text):
         return "UNKNOWN"
 
 def format_hardness_output(text):
-    """Format hardness output by removing everything before SME Justification and cleaning up"""
+    """Format agent output with global heading/subheading styling."""
     if not text:
-        return "No hardness data available"
+        return "No hardness summary available"
 
-    # Remove everything before "SME Justification"
-    clean_text = re.sub(r'^.*?(?=SME Justification)', '', text, flags=re.DOTALL | re.IGNORECASE)
-    
-    # If SME Justification wasn't found, use the original text
-    if not clean_text.strip():
-        clean_text = text
-    
-    # Remove calculation sections that might still be present
-    clean_text = re.sub(r'Calculation:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'Score Calculation:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'Calculation Process:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'How.*?calculated:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.IGNORECASE | re.DOTALL)
-    
-    # Remove mathematical expressions
-    clean_text = re.sub(r'\(\s*\d+\.?\d*\s*[+-]\s*\d+\.?\d*\s*[+-]\s*\d+\.?\d*\s*[+-]\s*\d+\.?\d*\s*\)\s*\/\s*4', '', clean_text)
-    clean_text = re.sub(r'\d+\.?\d*\s*[+-]\s*\d+\.?\d*\s*[+-]\s*\d+\.?\d*\s*[+-]\s*\d+\.?\d*\s*=\s*\d+\.?\d*', '', clean_text)
-    
-    # Remove dimension scores and individual question scores if they appear after SME Justification
-    clean_text = re.sub(r'Individual Question Scores.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'Dimension Averages.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'DIMENSION SCORES:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'OVERALL CLASSIFICATION:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'COMPREHENSIVE ASSESSMENT:.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    clean_text = re.sub(r'HARDNESS SUMMARY.*?(?=\n\n|\n[A-Z]|$)', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
-    
-    # Clean up remaining text
-    clean_text = re.sub(r'<[^>]+>', '', clean_text)
-    clean_text = re.sub(r'^\s+', '', clean_text, flags=re.MULTILINE)
-    clean_text = re.sub(r'\n\s+', '\n', clean_text)
-    clean_text = re.sub(r' {2,}', ' ', clean_text)
-    clean_text = re.sub(r'\n{3,}', '\n\n', clean_text)
-    
-    return clean_text.strip()
+    clean = sanitize_text(text)
+    return format_compact_output(clean, body_line_height=1.30)
 
 def submit_feedback_wrapper(feedback_type, user_id="", off_definitions="", suggestions="", additional_feedback=""):
     """Wrapper for submit_feedback to handle the parameter mismatch"""
@@ -377,15 +312,15 @@ def submit_feedback(feedback_type, employee_id="", off_definitions="", suggestio
 
 # Display agent progress in sidebar
 progress_data = get_agent_progress()
-st.sidebar.markdown("### 📊 Agent Progress")
+st.sidebar.markdown("### ðŸ“Š Agent Progress")
 st.sidebar.progress(progress_data['progress'])
 st.sidebar.write(f"**{progress_data['completed']}/{progress_data['total']}** dimensions completed")
 
 # Show completion status and navigation
 if progress_data['all_completed']:
-    st.sidebar.success("🎉 All dimensions completed!")
+    st.sidebar.success("ðŸŽ‰ All dimensions completed!")
 else:
-    st.sidebar.info("🔍 Complete all dimension agents for comprehensive analysis")
+    st.sidebar.info("ðŸ” Complete all dimension agents for comprehensive analysis")
 
 # Retrieve data from shared header
 shared = get_shared_data()
@@ -413,7 +348,7 @@ account, industry, problem = render_unified_business_inputs(
     show_titles=True,
     title_account_industry="Account & Industry",
     title_problem="Business Problem Description",
-    save_button_label="✅ Save Problem Details",
+    save_button_label="âœ… Save Problem Details",
 )
 
 st.markdown("---")
@@ -431,7 +366,7 @@ has_problem = bool(problem.strip())
 all_completed = all_agents_completed()
 
 # Analyze Hardness Button
-analyze_btn = st.button("🔍 Analyze Hardness", type="primary", width='stretch',
+analyze_btn = st.button("ðŸ” Analyze Hardness", type="primary", width='stretch',
                         disabled=not (has_account and has_industry and has_problem))
 
 if analyze_btn:
@@ -440,15 +375,15 @@ if analyze_btn:
 
     # Final validation before processing
     if not has_account:
-        st.error("❌ Please select an account before proceeding.")
+        st.error("âŒ Please select an account before proceeding.")
         st.stop()
 
     if not has_industry:
-        st.error("❌ Please select an industry before proceeding.")
+        st.error("âŒ Please select an industry before proceeding.")
         st.stop()
 
     if not has_problem:
-        st.error("❌ Please enter a business problem description.")
+        st.error("âŒ Please enter a business problem description.")
         st.stop()
 
     # Build enhanced context with dimension scores if available
@@ -480,7 +415,7 @@ if analyze_btn:
     if st.session_state.auth_token:
         headers["Authorization"] = f"Bearer {st.session_state.auth_token}"
 
-    with st.spinner("🔍 Analyzing problem hardness and difficulty..."):
+    with st.spinner("ðŸ” Analyzing problem hardness and difficulty..."):
         progress = st.progress(0)
         st.session_state.hardness_outputs = {}
 
@@ -521,7 +456,7 @@ if analyze_btn:
                 progress.progress(1.0)
                 st.session_state.show_hardness = True
                 st.session_state.analysis_complete = True
-                st.success("✅ Hardness analysis complete!")
+                st.success("âœ… Hardness analysis complete!")
 
         except Exception as e:
             st.error(f"An unexpected error occurred during analysis: {str(e)}")
@@ -545,7 +480,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                     <h3 style="margin-bottom:8px; color:white; font-weight:800; font-size:1.4rem; line-height:1.2;">
                         Hardness Assessment
                     </h3>
-                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.5; text-align:center; max-width: 800px;">
+                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.30; text-align:center; max-width: 800px;">
                         Please note that it is an <strong>AI-generated Hardness Assessment</strong>, derived from 
                         the <em>company</em> <strong>{display_account}</strong> and 
                         the <em>industry</em> <strong>{display_industry}</strong> based on the 
@@ -592,7 +527,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                     align-items: center;
                 ">
                     <h2 style="margin: 0 0 1rem 0; font-size: 2.5rem; font-weight: 800;">
-                        🔴 HARD
+                        ðŸ”´ HARD
                     </h2>
                     <p style="margin: 0; font-size: 1.1rem; opacity: 0.9;">
                         This problem requires significant expertise and resources
@@ -616,7 +551,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                     align-items: center;
                 ">
                     <h2 style="margin: 0 0 1rem 0; font-size: 2.5rem; font-weight: 800;">
-                        🟡 MODERATE
+                        ðŸŸ¡ MODERATE
                     </h2>
                     <p style="margin: 0; font-size: 1.1rem; opacity: 0.9;">
                         This problem requires careful planning and execution
@@ -640,7 +575,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                     align-items: center;
                 ">
                     <h2 style="margin: 0 0 1rem 0; font-size: 2.5rem; font-weight: 800;">
-                        🟢 NOT HARD
+                        ðŸŸ¢ NOT HARD
                     </h2>
                     <p style="margin: 0; font-size: 1.1rem; opacity: 0.9;">
                         This problem can be addressed with standard approaches
@@ -657,13 +592,13 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
         if display_score is not None:
             if display_score >= 4.0:
                 score_color = "#ff6b6b"
-                score_emoji = "🔴"
+                score_emoji = "ðŸ”´"
             elif display_score >= 3.1:
                 score_color = "#ffa502"
-                score_emoji = "🟡"
+                score_emoji = "ðŸŸ¡"
             else:
                 score_color = "#51cf66"
-                score_emoji = "🟢"
+                score_emoji = "ðŸŸ¢"
             
             score_source = "AI Assessment" if hardness_score is not None else "Dimension Average"
             
@@ -725,7 +660,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                         color: #ffa502;
                         margin: 0.5rem 0;
                     ">
-                        ⚡ Calculating...
+                        âš¡ Calculating...
                     </div>
                     <p style="margin: 0; color: #666; font-size: 1rem;">
                         Score analysis in progress
@@ -744,7 +679,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                 <div class="section-title-box" style="padding: 1rem 1.5rem;">
                     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
                         <h3 style="margin-bottom:8px; color:white; font-weight:800; font-size:1.4rem; line-height:1.2;">
-                            📊 Dimension Scores Summary
+                            ðŸ“Š Dimension Scores Summary
                         </h3>
                     </div>
                 </div>
@@ -762,13 +697,13 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                 if score is not None:
                     if score >= 4.0:
                         dim_color = "#ff6b6b"
-                        dim_emoji = "🔴"
+                        dim_emoji = "ðŸ”´"
                     elif score >= 3.1:
                         dim_color = "#ffa502" 
-                        dim_emoji = "🟡"
+                        dim_emoji = "ðŸŸ¡"
                     else:
                         dim_color = "#51cf66"
-                        dim_emoji = "🟢"
+                        dim_emoji = "ðŸŸ¢"
                     
                     st.markdown(
                         f"""
@@ -808,7 +743,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
 
 if st.session_state.get("show_hardness") and st.session_state.get("hardness_outputs"):
     st.markdown("---")
-    st.markdown('<div class="section-title-box" style="text-align:center;"><h3>💬 User Feedback</h3></div>',
+    st.markdown('<div class="section-title-box" style="text-align:center;"><h3>ðŸ’¬ User Feedback</h3></div>',
                 unsafe_allow_html=True)
     st.markdown(
         "Please share your thoughts or suggestions after reviewing the hardness assessment.")
@@ -856,7 +791,7 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("hardness_feedback_form_positive", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {user_id}')
-                submitted = st.form_submit_button("📨 Submit Positive Feedback")
+                submitted = st.form_submit_button("ðŸ“¨ Submit Positive Feedback")
                 if submitted:
                     if submit_feedback_wrapper(fb_choice, user_id=user_id):
                         st.rerun()
@@ -873,10 +808,10 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                     key="hardness_assessment_issues"
                 )
                 
-                submitted = st.form_submit_button("📨 Submit Feedback")
+                submitted = st.form_submit_button("ðŸ“¨ Submit Feedback")
                 if submitted:
                     if not assessment_issues.strip():
-                        st.warning("⚠️ Please provide details about the assessment issues.")
+                        st.warning("âš ï¸ Please provide details about the assessment issues.")
                     else:
                         if submit_feedback_wrapper(fb_choice, user_id=user_id, additional_feedback=assessment_issues):
                             st.rerun()
@@ -893,24 +828,26 @@ if st.session_state.get("show_hardness") and st.session_state.get("hardness_outp
                     key="hardness_suggestions"
                 )
                 
-                submitted = st.form_submit_button("📨 Submit Feedback")
+                submitted = st.form_submit_button("ðŸ“¨ Submit Feedback")
                 if submitted:
                     if not suggestions.strip():
-                        st.warning("⚠️ Please provide your suggestions.")
+                        st.warning("âš ï¸ Please provide your suggestions.")
                     else:
                         if submit_feedback_wrapper(fb_choice, user_id=user_id, suggestions=suggestions):
                             st.rerun()
     
     else:
         # Feedback already submitted - show success and option for another submission
-        st.markdown('<div class="feedback-success">✅ Thank you! Your feedback has been recorded.</div>', unsafe_allow_html=True)
-    if st.button("📝 Submit Another Feedback", key="hardness_reopen_feedback_btn", width='stretch'):
+        st.markdown('<div class="feedback-success">âœ… Thank you! Your feedback has been recorded.</div>', unsafe_allow_html=True)
+    if st.button("ðŸ“ Submit Another Feedback", key="hardness_reopen_feedback_btn", width='stretch'):
             st.session_state.hardness_feedback_submitted = False
             st.rerun()
 
 # =========================================
-# ⬅️ BACK BUTTON
+# â¬…ï¸ BACK BUTTON
 # =========================================
 st.markdown("---")
-if st.button("⬅️ Back to Main Page", width='stretch'):
+if st.button("â¬…ï¸ Back to Main Page", width='stretch'):
     st.switch_page("Welcome_Agent.py")
+
+

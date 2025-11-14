@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import os
 import re
 import json
@@ -12,6 +12,9 @@ from shared_header import (
     save_feedback_to_admin_session,
     get_shared_data,
     render_unified_business_inputs,
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 
 # =========================================
@@ -62,13 +65,13 @@ API_CONFIGS = [
         "prompt": lambda problem, outputs: (
             f"{problem}\n\n"
             "Understand Industry Context\n"
-            "Identify and summarize the standard practices, frameworks, and operational norms commonly followed within the industry related to the company’s problem statement.\n\n"
+            "Identify and summarize the standard practices, frameworks, and operational norms commonly followed within the industry related to the companyâ€™s problem statement.\n\n"
             "Assess Company Practices\n"
-            "Examine how the specific company operates within its domain—its current strategies, processes, and business approaches that align with or differ from standard industry practices.\n\n"
+            "Examine how the specific company operates within its domainâ€”its current strategies, processes, and business approaches that align with or differ from standard industry practices.\n\n"
             "Analyze Competitor Benchmarks\n"
             "Discover and analyze key competitors, exploring their best practices, innovative strategies, and differentiating factors that contribute to their market position or success.\n\n"
             "Synthesize Strategic Insights (Non-Solution Oriented)\n"
-            "Consolidate findings into structured insights that reveal patterns, gaps, and opportunities for understanding—not for recommending solutions—helping decision-makers see the problem from a higher strategic lens."
+            "Consolidate findings into structured insights that reveal patterns, gaps, and opportunities for understandingâ€”not for recommending solutionsâ€”helping decision-makers see the problem from a higher strategic lens."
         )
     }
 ]
@@ -106,103 +109,24 @@ if 'auth_token' not in st.session_state:
 # =========================================
 
 def json_to_text(data):
-    if not data:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text", "answer", "response"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        for value in data.values():
-            if isinstance(value, str) and len(value) > 10:
-                return value
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def sanitize_text(text):
-    if not text:
-        return ""
-    text = re.sub(r'^\s*\d+\.\s*', '', text.strip())
-    text = re.sub(r'\n\s*\d+\.\s*', '\n', text)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    return text.strip()
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    return base
 
 # =========================================
 # FIXED: format_standard_html + collect_paragraph
 # =========================================
 def format_standard_html(text):
-    """Enhanced: bold headers, clean bullets, proper spacing"""
+    """Format agent output with global heading/subheading styling."""
     if not text:
         return "No analysis available"
 
-    t = sanitize_text(text)
-    t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
-    t = re.sub(r'(?m)^(Section\s+\d+[\s:—–]*)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.IGNORECASE)
-    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)
-
-    lines = t.splitlines()
-    n = len(lines)
-    i = 0
-    paragraph_html = []
-
-    while i < n:
-        ln = lines[i].strip()
-        if not ln:
-            i += 1
-            continue
-
-        if re.match(r'^Section\s+\d+', ln, flags=re.IGNORECASE):
-            paragraph_html.append(f"<strong>{ln}</strong>")
-            i += 1
-            continue
-
-        if re.match(r'^[A-Z][^:\n]+:', ln):
-            paragraph_html.append(f"<strong>{ln}</strong>")
-            i += 1
-            continue
-
-        if re.match(r'^\s*(?:•|\d+\.|-)\s+', ln):
-            block_lines = []
-            while i < n and re.match(r'^\s*(?:•|\d+\.|-)\s+', lines[i]):
-                block_lines.append(re.sub(r'^\s*(?:•|\d+\.|-)\s+', '• ', lines[i].strip()))
-                i += 1
-            paragraph_html.extend(block_lines)
-            continue
-
-        block, j = collect_paragraph(lines, n, i)
-        paragraph_html.append("<br>".join([b.strip() for b in block if b.strip()]))
-        i = j
-
-    final_paragraphs = []
-    temp = []
-    for line in paragraph_html:
-        if line:
-            temp.append(line)
-        elif temp:
-            final_paragraphs.append("<br>".join(temp))
-            temp = []
-    if temp:
-        final_paragraphs.append("<br>".join(temp))
-
-    para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>" for p in final_paragraphs
-    ]
-    return "\n".join(para_wrapped)
-
+    clean = sanitize_text(text)
+    return format_compact_output(clean, body_line_height=1.30)
 
 def collect_paragraph(lines, n, start_idx):
     block = [lines[start_idx]]
@@ -211,7 +135,7 @@ def collect_paragraph(lines, n, start_idx):
         next_line = lines[j]
         if not next_line.strip():
             break
-        if re.match(r'^\s*(?:•|\d+\.|-|Section|[A-Z][^:\n]+:)', next_line):
+        if re.match(r'^\s*(?:â€¢|\d+\.|-|Section|[A-Z][^:\n]+:)', next_line):
             break
         block.append(next_line)
         j += 1
@@ -256,7 +180,7 @@ def call_api(agent_name, problem, outputs):
 def parse_sections_from_output(text):
     if not text:
         return ["Full Report"]
-    pattern = r'(Section\s+\d+[\s:—–][^\n]+)'
+    pattern = r'(Section\s+\d+[\s:â€”â€“][^\n]+)'
     matches = re.findall(pattern, text, flags=re.IGNORECASE)
     unique = []
     seen = set()
@@ -280,7 +204,7 @@ def get_employee_id():
         pass
     return "Not Available"
 
-def submit_feedback(section, feedback_type, user_id, off_definitions="", suggestions="", additional_feedback=""):
+def submit_feedback( feedback_type, user_id, off_definitions="", suggestions="", additional_feedback=""):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     account = st.session_state.get("current_account", "")
     industry = st.session_state.get("current_industry", "")
@@ -295,8 +219,7 @@ def submit_feedback(section, feedback_type, user_id, off_definitions="", suggest
         "Account": account,
         "Industry": industry,
         "ProblemStatement": problem,
-        "Section": section,
-        "Timestamp": timestamp
+        "Timestamp": timestamp,
     }
 
     try:
@@ -309,7 +232,7 @@ def submit_feedback(section, feedback_type, user_id, off_definitions="", suggest
                "ProblemStatement", "Section"]
 
     row = [timestamp, user_id, additional_feedback, feedback_type,
-           off_definitions, suggestions, account, industry, problem, section]
+           off_definitions, suggestions, account, industry, problem]
 
     entry = pd.DataFrame([row], columns=columns)
 
@@ -395,7 +318,7 @@ if analyze_btn:
     Industry: {industry}
     """.strip()
 
-    with st.spinner("Analyzing industry standards • up to 3 minutes"):
+    with st.spinner("Analyzing industry standards â€¢ up to 3 minutes"):
         result = call_api("analyze_standard_practices", full_context, {})
         if result:
             st.session_state.standard_output = result
@@ -465,33 +388,30 @@ if st.session_state.get("show_standard") and st.session_state.get("standard_outp
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("standard_feedback_form_positive", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Feedback for section:", options=sections, index=0)
                 if st.form_submit_button("Submit Positive Feedback"):
-                    submit_feedback(section, "Positive", employee_id, additional_feedback="Useful")
+                    submit_feedback( "Positive", employee_id, additional_feedback="Useful")
                     st.rerun()
 
         elif fb_choice == "I have read it, found some benchmarks or insights to be inaccurate.":
             with st.form("standard_feedback_form_inaccurate", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Select Section", options=sections, index=0)
-                inaccurate = st.text_area("Paste inaccurate excerpts (one per line):", height=140)
+                inaccurate = st.text_input("Paste inaccurate excerpts (one per line):")
                 additional = st.text_input("Additional comments:")
                 if st.form_submit_button("Submit Feedback"):
                     if not inaccurate.strip() and not additional.strip():
                         st.warning("Please provide details.")
                     else:
                         off_defs = " | ".join([l.strip() for l in inaccurate.splitlines() if l.strip()]) or "No excerpts"
-                        submit_feedback(section, "Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
+                        submit_feedback( "Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
                         st.rerun()
 
         elif fb_choice == "I have suggestions for improving the analysis.":
             with st.form("standard_feedback_form_suggestions", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Suggestion for section:", options=sections, index=0)
-                suggestions = st.text_area("Your suggestions:", height=140)
+                suggestions = st.text_input("Your suggestions:")
                 if st.form_submit_button("Submit Feedback"):
                     if suggestions.strip():
-                        submit_feedback(section, "Suggestion", employee_id, suggestions=suggestions)
+                        submit_feedback( "Suggestion", employee_id, suggestions=suggestions)
                         st.rerun()
                     else:
                         st.warning("Please provide suggestions.")
@@ -542,3 +462,4 @@ if st.session_state.get("show_standard") and st.session_state.get("standard_outp
 st.markdown("---")
 if st.button("Back to Main Page", use_container_width=True):
     st.switch_page("Welcome_Agent.py")
+

@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import os
 import re
 import json
@@ -11,6 +11,9 @@ from shared_header import (
     save_feedback_to_admin_session,
     get_shared_data,
     render_unified_business_inputs,
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 
 # =========================================
@@ -131,191 +134,21 @@ if 'auth_token' not in st.session_state:
 # =========================================
 
 def json_to_text(data):
-    if not data:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text", "answer", "response"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        for value in data.values():
-            if isinstance(value, str) and len(value) > 10:
-                return value
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def sanitize_text(text):
-    if not text:
-        return ""
-    text = re.sub(r'^\s*s\s+', '', text.strip())
-    text = re.sub(r'\n\s*s\s+', '\n', text)
-    text = re.sub(r'Q\d+\s*Answer\s*Explanation\s*:', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    text = re.sub(r'& Key Takeaway:', 'Key Takeaway:', text)
-    return text.strip()
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    return base
 
 def format_interconnectedness_with_bold(text, extra_phrases=None):
-    """Enhanced: Bold headings + multi-line → bullet points"""
+    """Format agent output with global heading/subheading styling."""
     if not text:
         return "No interconnectedness data available"
 
-    clean_text = sanitize_text(text)
-    clean_text = clean_text.replace(" - ", " : ")
-    clean_text = re.sub(r'(?m)^\s*[-*]\s+', '• ', clean_text)
-
-    extra_patterns = []
-    if extra_phrases:
-        for p in extra_phrases:
-            if any(ch in p for ch in r".^$*+?{}[]\|()"):
-                extra_patterns.append(p)
-            else:
-                extra_patterns.append(re.escape(p))
-
-    lines = clean_text.splitlines()
-    n = len(lines)
-    i = 0
-    paragraph_html = []
-
-    def collect_continuation(start_idx):
-        block_lines = [lines[start_idx].rstrip()]
-        j = start_idx + 1
-        while j < n:
-            next_line = lines[j]
-            if not next_line.strip():
-                break
-            if re.match(r'^\s+', next_line) or re.match(r'^\s*[a-z]', next_line):
-                block_lines.append(next_line.rstrip())
-                j += 1
-                continue
-            if re.match(r'^\s*(?:•|-|\d+\.)\s+', next_line):
-                break
-            break
-        return block_lines, j
-
-    while i < n:
-        ln = lines[i].rstrip()
-        if not ln.strip():
-            paragraph_html.append('')
-            i += 1
-            continue
-
-        if extra_patterns:
-            new_ln = ln
-            for pat in extra_patterns:
-                try:
-                    new_ln = re.sub(pat, lambda m: f"<strong>{m.group(0)}</strong>", new_ln, flags=re.IGNORECASE)
-                except re.error:
-                    new_ln = re.sub(re.escape(pat), lambda m: f"<strong>{m.group(0)}</strong>", new_ln, flags=re.IGNORECASE)
-            if new_ln != ln:
-                paragraph_html.append(new_ln)
-                i += 1
-                continue
-
-        # Step headings
-        if re.search(r'(Step\s*\d+\s*:)', ln, flags=re.IGNORECASE):
-            block, j = collect_continuation(i)
-            block_text = "<br>".join([b.strip() for b in block])
-            paragraph_html.append(f"<strong>{block_text}</strong>")
-            i = j
-            continue
-
-        # Numbered with colon
-        m_num_colon = re.match(r'^\s*(\d+\.\s+[^:]+):\s*(.*)$', ln)
-        if m_num_colon:
-            heading = m_num_colon.group(1).strip()
-            remainder = m_num_colon.group(2).strip()
-            paragraph_html.append(f"<strong>{heading}:</strong> {remainder}" if remainder else f"<strong>{heading}:</strong>")
-            i += 1
-            continue
-
-        # Numbered without colon → collect block
-        m_num_no_colon = re.match(r'^\s*(\d+\.\s*.+)$', ln)
-        if m_num_no_colon:
-            block, j = collect_continuation(i)
-            block_lines = [b.strip() for b in block if b.strip()]
-            if len(block_lines) > 1:
-                paragraph_html.append(f"<strong>{block_lines[0]}</strong>")
-                paragraph_html.extend([f"• {line}" for line in block_lines[1:]])
-            else:
-                paragraph_html.append(f"<strong>{block_lines[0]}</strong>")
-            i = j
-            continue
-
-        # Bullet with colon
-        m_bullet_heading = re.match(r'^\s*(?:•|\d+\.)\s*([^:]+):\s*(.*)$', ln)
-        if m_bullet_heading:
-            heading = m_bullet_heading.group(1).strip()
-            remainder = m_bullet_heading.group(2).strip()
-            paragraph_html.append(f"• <strong>{heading}:</strong> {remainder}" if remainder else f"• <strong>{heading}:</strong>")
-            i += 1
-            continue
-
-        # Generic "Key: Value"
-        m_side = re.match(r'^\s*([^:]+):\s*(.*)$', ln)
-        if m_side and len(m_side.group(1).split()) <= 8:
-            left = m_side.group(1).strip()
-            right = m_side.group(2).strip()
-            paragraph_html.append(f"<strong>{left}:</strong> {right}" if right else f"<strong>{left}:</strong>")
-            i += 1
-            continue
-
-        # Multi-line paragraph → convert to bullets if >2 lines
-        if not re.match(r'^\s*(•|\d+\.|[-*]|\s*<strong>)', ln):
-            block, j = collect_continuation(i)
-            block_lines = [b.strip() for b in block if b.strip()]
-            if len(block_lines) > 2:
-                for idx, line in enumerate(block_lines):
-                    if idx == 0:
-                        paragraph_html.append(f"<strong>{line}</strong>")
-                    else:
-                        paragraph_html.append(f"• {line}")
-                i = j
-                continue
-            else:
-                paragraph_html.append("<br>".join(block_lines))
-                i = j
-                continue
-
-        paragraph_html.append(ln)
-        i += 1
-
-    # Group into paragraphs
-    final_paragraphs = []
-    temp_lines = []
-    for entry in paragraph_html:
-        if entry == '':
-            if temp_lines:
-                final_paragraphs.append("<br>".join(temp_lines))
-                temp_lines = []
-        else:
-            temp_lines.append(entry)
-    if temp_lines:
-        final_paragraphs.append("<br>".join(temp_lines))
-
-    para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>" for p in final_paragraphs
-    ]
-    final_html = "\n".join(para_wrapped)
-    final_html = re.sub(r'(<br>\s*){3,}', '<br><br>', final_html)
-    return final_html
-
-# =========================================
-# CENTRALIZED API CALL
-# =========================================
+    clean = sanitize_text(text)
+    return format_compact_output(clean, extra_phrases=extra_phrases, body_line_height=1.30)
 
 def call_api(agent_name, problem, outputs):
     config = next((a for a in API_CONFIGS if a["name"] == agent_name), None)
@@ -641,3 +474,4 @@ Generated by Interconnectedness Analysis Tool
 st.markdown("---")
 if st.button("Back to Main Page", use_container_width=True):
     st.switch_page("Welcome_Agent.py")
+

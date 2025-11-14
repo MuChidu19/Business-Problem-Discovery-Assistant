@@ -1,10 +1,7 @@
-from shared_header import render_header
-import streamlit as st
-import streamlit.components.v1 as components
+﻿import streamlit as st
 import os
 import re
 import json
-# REMOVE THIS: render_header() - Don't call it here, call it after imports
 from datetime import datetime
 import pandas as pd
 import requests
@@ -16,9 +13,24 @@ from shared_header import (
     ACCOUNT_INDUSTRY_MAP,
     get_shared_data,
     render_unified_business_inputs,
-    render_unified_admin_panel,  # ADD THIS
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 
+# --- Page Config ---
+st.set_page_config(
+    page_title="Vocabulary Agent",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+hide_sidebar = """
+    <style>
+        [data-testid="stSidebar"] {display: none;}
+    </style>
+"""
+st.markdown(hide_sidebar, unsafe_allow_html=True)
 
 render_header(
     agent_name="Vocabulary Agent",
@@ -26,12 +38,6 @@ render_header(
     enable_admin_access=True,
     header_height=85
 )
-hide_sidebar = """
-    <style>
-        [data-testid="stSidebar"] {display: none;}
-    </style>
-"""
-st.markdown(hide_sidebar, unsafe_allow_html=True)
 
 def call_api(agent_name, problem, outputs):
     """
@@ -63,13 +69,6 @@ def call_api(agent_name, problem, outputs):
     except Exception as e:
         st.error(f"API Call Failed: {str(e)}")
         return None
-
-# --- Page Config ---
-st.set_page_config(
-    page_title="Vocabulary Agent",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
 
 # --- Initialize session state ---
 if 'vocab_output' not in st.session_state:
@@ -142,191 +141,22 @@ if 'auth_token' not in st.session_state:
 # ===============================
 
 def json_to_text(data):
-    """Extract text from JSON response"""
-    if data is None:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text", "answer", "response"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        # Try to extract any string values
-        for value in data.values():
-            if isinstance(value, str) and len(value) > 10:
-                return value
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def sanitize_text(text):
-    """Remove markdown artifacts and clean up text"""
-    if not text:
-        return ""
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    return base
 
-    # Fix the "s" character issue
-    text = re.sub(r'^\s*s\s+', '', text.strip())
-    text = re.sub(r'\n\s*s\s+', '\n', text)
-
-    text = re.sub(r'Q\d+\s*Answer\s*Explanation\s*:',
-                  '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    text = re.sub(r'& Key Takeaway:', 'Key Takeaway:', text)
-
-    return text.strip()
 
 def format_vocabulary_with_bold(text, extra_phrases=None):
-    """Format vocabulary text with bold styling"""
+    """Format vocabulary text with headings/subheadings preserved."""
     if not text:
         return "No vocabulary data available"
 
-    clean_text = sanitize_text(text)
-    clean_text = clean_text.replace(" - ", " : ")
-    clean_text = re.sub(r'(?m)^\s*[-*]\s+', '• ', clean_text)
-
-    extra_patterns = []
-    if extra_phrases:
-        for p in extra_phrases:
-            if any(ch in p for ch in r".^$*+?{}[]\|()"):
-                extra_patterns.append(p)
-            else:
-                extra_patterns.append(re.escape(p))
-
-    lines = clean_text.splitlines()
-    n = len(lines)
-    i = 0
-    paragraph_html = []
-
-    def collect_continuation(start_idx):
-        block_lines = [lines[start_idx].rstrip()]
-        j = start_idx + 1
-        while j < n:
-            next_line = lines[j]
-            if not next_line.strip():
-                break
-            if re.match(r'^\s+', next_line) or re.match(r'^\s*[a-z]', next_line):
-                block_lines.append(next_line.rstrip())
-                j += 1
-                continue
-            if re.match(r'^\s*(?:•|-|\d+\.)\s+', next_line):
-                break
-            break
-        return block_lines, j
-
-    while i < n:
-        ln = lines[i].rstrip()
-        if not ln.strip():
-            paragraph_html.append('')
-            i += 1
-            continue
-
-        if extra_patterns:
-            new_ln = ln
-            for pat in extra_patterns:
-                try:
-                    new_ln = re.sub(
-                        pat, lambda m: f"<strong>{m.group(0)}</strong>", new_ln, flags=re.IGNORECASE)
-                except re.error:
-                    new_ln = re.sub(re.escape(
-                        pat), lambda m: f"<strong>{m.group(0)}</strong>", new_ln, flags=re.IGNORECASE)
-            if new_ln != ln:
-                paragraph_html.append(new_ln)
-                i += 1
-                continue
-
-        if re.search(r'(Step\s*\d+\s*:)', ln, flags=re.IGNORECASE):
-            block, j = collect_continuation(i)
-            block_text = "<br>".join([b.strip() for b in block])
-            paragraph_html.append(f"<strong>{block_text}</strong>")
-            i = j
-            continue
-
-        m_num_colon = re.match(r'^\s*(\d+\.\s+[^:]+):\s*(.*)$', ln)
-        if m_num_colon:
-            heading = m_num_colon.group(1).strip()
-            remainder = m_num_colon.group(2).strip()
-            paragraph_html.append(
-                f"<strong>{heading}:</strong> {remainder}" if remainder else f"<strong>{heading}:</strong>")
-            i += 1
-            continue
-
-        m_num_no_colon = re.match(r'^\s*(\d+\.\s+.+)$', ln)
-        if m_num_no_colon:
-            block, j = collect_continuation(i)
-            block_text = "<br>".join([b.strip() for b in block])
-            paragraph_html.append(f"<strong>{block_text}</strong>")
-            i = j
-            continue
-
-        m_bullet_heading = re.match(r'^\s*(?:•|\d+\.)\s*([^:]+):\s*(.*)$', ln)
-        if m_bullet_heading:
-            heading = m_bullet_heading.group(1).strip()
-            remainder = m_bullet_heading.group(2).strip()
-            paragraph_html.append(
-                f"• <strong>{heading}:</strong> {remainder}" if remainder else f"• <strong>{heading}:</strong>")
-            i += 1
-            continue
-
-        m_side = re.match(r'^\s*([^:]+):\s*(.*)$', ln)
-        if m_side and len(m_side.group(1).split()) <= 8:
-            left = m_side.group(1).strip()
-            right = m_side.group(2).strip()
-            paragraph_html.append(
-                f"<strong>{left}:</strong> {right}" if right else f"<strong>{left}:</strong>")
-            i += 1
-            continue
-
-        if re.fullmatch(r'\s*Revenue\s+Growth\s+Rate\s*', ln, flags=re.IGNORECASE):
-            paragraph_html.append(f"<strong>{ln.strip()}</strong>")
-            i += 1
-            continue
-
-        paragraph_html.append(ln)
-        i += 1
-
-    final_paragraphs = []
-    temp_lines = []
-    for entry in paragraph_html:
-        if entry == '':
-            if temp_lines:
-                final_paragraphs.append("<br>".join(temp_lines))
-                temp_lines = []
-        else:
-            temp_lines.append(entry)
-    if temp_lines:
-        final_paragraphs.append("<br>".join(temp_lines))
-
-    para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>" for p in final_paragraphs
-    ]
-    final_html = "\n".join(para_wrapped)
-
-    formatted_output = f"""
-    <div class="vocab-display">
-        {final_html}
-    </div>
-    """
-    formatted_output = re.sub(r'(<br>\s*){3,}', '<br><br>', formatted_output)
-    return formatted_output
-    formatted_output = f"""
-    <div class="vocab-display">
-        {final_html}
-    </div>
-    """
-    formatted_output = re.sub(r'(<br>\s*){3,}', '<br><br>', formatted_output)
-    return formatted_output
+    clean = sanitize_text(text)
+    return format_compact_output(clean, extra_phrases=extra_phrases, body_line_height=1.30)
 
 def submit_feedback(feedback_type, employee_id="", off_definitions="", suggestions="", additional_feedback=""):
     """Submit feedback to CSV file and admin session storage"""
@@ -544,7 +374,7 @@ if st.session_state.get("show_vocabulary") and st.session_state.get("vocab_outpu
                     <h3 style="margin-bottom:8px; color:white; font-weight:800; font-size:1.4rem; line-height:1.2;">
                         Vocabulary
                     </h3>
-                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.5; text-align:center; max-width: 800px;">
+                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.35; text-align:center; max-width: 800px;">
                         Please note that it is an <strong>AI-generated Vocabulary</strong>, derived from 
                         the <em>company</em> <strong>{display_account}</strong> and 
                         the <em>industry</em> <strong>{display_industry}</strong> based on the 

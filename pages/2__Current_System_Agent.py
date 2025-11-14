@@ -1,4 +1,4 @@
-# pip install markdown2 requests pandas
+﻿# pip install markdown2 requests pandas
 
 import streamlit as st
 from shared_header import (
@@ -10,7 +10,10 @@ from shared_header import (
     INDUSTRIES,
     ACCOUNT_INDUSTRY_MAP,
     _safe_rerun,
-    save_feedback_to_file
+    save_feedback_to_file,
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 import requests
 import json
@@ -134,45 +137,14 @@ if 'auth_token' not in st.session_state:
 # =========================================
 
 def sanitize_text(text):
-    """Remove markdown artifacts and clean up text"""
-    if not text:
-        return ""
-    # Fix the "s" character issue - remove stray 's' characters at the beginning
-    text = re.sub(r'^\s*s\s+', '', text.strip())
-    text = re.sub(r'\n\s*s\s+', '\n', text)
-    # Remove --- lines
-    text = re.sub(r'^---\s*$', '', text, flags=re.MULTILINE)
-    text = re.sub(r'Q\d+\s*Answer\s*Explanation\s*:', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    text = re.sub(r'&', '&', text)
-    text = re.sub(r'& Key Takeaway:', 'Key Takeaway:', text)
-    return text.strip()
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    base = re.sub(r'^---\s*$', '', base, flags=re.MULTILINE)
+    return base
 
 def json_to_text(data):
-    """Convert JSON response to text"""
-    if data is None:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def parse_current_system_sections(text):
     """Split extracted text into structured sections"""
@@ -258,168 +230,13 @@ def convert_to_pointwise_html(content):
     return f"<ul style='padding-left:1.2rem; margin:0; color: var(--text-primary);'>{items_html}</ul>"
 
 def format_current_system_with_bold(text, extra_phrases=None):
-    """
-    Format Current System output with bold styling.
-    Formats current system text with bold patterns and proper structure.
-    """
+    """Format agent output with global heading/subheading styling."""
     if not text:
         return "No current system data available"
-    
-    # Sanitize text
-    try:
-        clean_text = sanitize_text(text)
-    except NameError:
-        clean_text = text
-    
-    # Remove numbered sections like "2." and "3." etc.
-    clean_text = re.sub(r'^\s*\d+\.\s*', '', clean_text, flags=re.MULTILINE)
-    
-    # Basic normalization
-    clean_text = clean_text.replace(" - ", " : ")
-    clean_text = re.sub(r'(?m)^\s*[-*]\s+', '• ', clean_text)
-    
-    # Prepare extra phrase patterns
-    extra_patterns = []
-    if extra_phrases:
-        for p in extra_phrases:
-            if any(ch in p for ch in r".^$*+?{}[]\|()"):
-                extra_patterns.append(p)
-            else:
-                extra_patterns.append(re.escape(p))
-    
-    lines = clean_text.splitlines()
-    n = len(lines)
-    i = 0
-    paragraph_html = []
-    
-    def collect_continuation(start_idx):
-        """Collect continuation lines for block-style headings."""
-        block_lines = [lines[start_idx].rstrip()]
-        j = start_idx + 1
-        while j < n:
-            next_line = lines[j]
-            if not next_line.strip():
-                break
-            if re.match(r'^\s+', next_line) or re.match(r'^\s*[a-z]', next_line):
-                block_lines.append(next_line.rstrip())
-                j += 1
-                continue
-            if re.match(r'^\s*(?:•|-|\d+\.)\s+', next_line):
-                break
-            break
-        return block_lines, j
-    
-    while i < n:
-        ln = lines[i].rstrip()
-        if not ln.strip():
-            paragraph_html.append('')
-            i += 1
-            continue
-        
-        # Extra phrases
-        if extra_patterns:
-            new_ln = ln
-            for pat in extra_patterns:
-                try:
-                    new_ln = re.sub(
-                        pat, lambda m: f"<strong>{m.group(0)}</strong>", 
-                        new_ln, flags=re.IGNORECASE)
-                except re.error:
-                    new_ln = re.sub(re.escape(
-                        pat), lambda m: f"<strong>{m.group(0)}</strong>", 
-                        new_ln, flags=re.IGNORECASE)
-            if new_ln != ln:
-                paragraph_html.append(new_ln)
-                i += 1
-                continue
-        
-        # Section headers (Current System, Inputs, Outputs, Pain Points)
-        if re.match(r'^\s*(Current\s+System|Inputs?|Outputs?|Pain\s+Points?|System\s+Description)', ln, flags=re.IGNORECASE):
-            paragraph_html.append(
-                f"<strong style='font-size:1.1rem; color: var(--text-primary);'>{ln.strip()}</strong>")
-            i += 1
-            continue
-        
-        # Numbered heading WITH colon
-        m_num_colon = re.match(r'^\s*(\d+\.\s+[^:]+):\s*(.*)$', ln)
-        if m_num_colon:
-            heading = m_num_colon.group(1).strip()
-            remainder = m_num_colon.group(2).strip()
-            if remainder:
-                paragraph_html.append(
-                    f"<strong style='color: var(--text-primary);'>{heading}:</strong> {remainder}")
-            else:
-                paragraph_html.append(f"<strong style='color: var(--text-primary);'>{heading}:</strong>")
-            i += 1
-            continue
-        
-        # Numbered heading WITHOUT colon
-        m_num_no_colon = re.match(r'^\s*(\d+\.\s+.+)$', ln)
-        if m_num_no_colon:
-            block, j = collect_continuation(i)
-            block_text = "<br>".join([b.strip() for b in block])
-            paragraph_html.append(f"<strong style='color: var(--text-primary);'>{block_text}</strong>")
-            i = j
-            continue
-        
-        # Bullet with colon
-        m_bullet_heading = re.match(r'^\s*(?:•|\d+\.)\s*([^:]+):\s*(.*)$', ln)
-        if m_bullet_heading:
-            heading = m_bullet_heading.group(1).strip()
-            remainder = m_bullet_heading.group(2).strip()
-            if remainder:
-                paragraph_html.append(
-                    f"• <strong style='color: var(--text-primary);'>{heading}:</strong> {remainder}")
-            else:
-                paragraph_html.append(f"• <strong style='color: var(--text-primary);'>{heading}:</strong>")
-            i += 1
-            continue
-        
-        # Generic inline heading "LeftOfColon: rest" - FIXED THIS PART
-        m_side = re.match(r'^\s*([^:]+):\s*(.*)$', ln)
-        if m_side and len(m_side.group(1).split()) <= 12:  # Increased word limit
-            left = m_side.group(1).strip()
-            right = m_side.group(2).strip()
-            # Skip if it's a section header we already processed
-            if not re.match(r'^\s*(Current\s+System|Inputs?|Outputs?|Pain\s+Points?|System\s+Description)', left, flags=re.IGNORECASE):
-                paragraph_html.append(
-                    f"<strong style='color: var(--text-primary);'>{left}:</strong> {right}" if right 
-                    else f"<strong style='color: var(--text-primary);'>{left}:</strong>")
-                i += 1
-                continue
-        
-        # Handle bullet points with colons that might have been missed
-        if ':' in ln and not ln.startswith('•'):
-            parts = ln.split(':', 1)
-            if len(parts) == 2 and len(parts[0].split()) <= 8:
-                left = parts[0].strip()
-                right = parts[1].strip()
-                paragraph_html.append(f"<strong style='color: var(--text-primary);'>{left}:</strong> {right}")
-                i += 1
-                continue
-        
-        # Default
-        paragraph_html.append(f"<span style='color: var(--text-primary);'>{ln}</span>")
-        i += 1
-    
-    # Group into paragraphs
-    final_paragraphs = []
-    temp_lines = []
-    for entry in paragraph_html:
-        if entry == '':
-            if temp_lines:
-                final_paragraphs.append("<br>".join(temp_lines))
-                temp_lines = []
-        else:
-            temp_lines.append(entry)
-    if temp_lines:
-        final_paragraphs.append("<br>".join(temp_lines))
-    
-    para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem; color: var(--text-primary);'>{p}</p>" 
-        for p in final_paragraphs]
-    final_html = "\n".join(para_wrapped)
-    return final_html
+
+    clean = sanitize_text(text)
+    clean = re.sub(r'^\s*\d+\.\s*', '', clean, flags=re.MULTILINE)
+    return format_compact_output(clean, extra_phrases=extra_phrases, body_line_height=1.30)
 
 def call_api(agent_name, problem, outputs):
     """
@@ -618,7 +435,7 @@ if st.session_state.current_system_extracted:
                     <h3 style="margin-bottom:8px; color:white; font-weight:800; font-size:1.4rem; line-height:1.2;">
                         Current System Analysis
                     </h3>
-                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.5; text-align:center; max-width: 800px;">
+                    <p style="font-size:0.95rem; color:white; margin:0; line-height:1.30; text-align:center; max-width: 800px;">
                         Please note that this is an <strong>AI-generated Current System Analysis</strong>, derived from the problem statement you shared.<br>
                         In case you find something off, there's a provision to share feedback at the bottom we encourage you to use it.
                     </p>
@@ -656,7 +473,7 @@ if st.session_state.current_system_extracted:
             </h4>
             <div style="
                 color: var(--text-primary);
-                line-height: 1.45;
+                line-height: 1.30;
                 font-size: 1rem;
                 text-align: left;
                 white-space: normal;
@@ -694,7 +511,7 @@ if st.session_state.current_system_extracted:
             </h4>
             <div style="
                 color: var(--text-primary);
-                line-height: 1.45;
+                line-height: 1.30;
                 font-size: 1rem;
                 text-align: left;
                 white-space: normal;
@@ -735,7 +552,7 @@ if st.session_state.current_system_extracted:
                 </h4>
                 <div style="
                     color: var(--text-primary);
-                    line-height: 1.45;
+                    line-height: 1.30;
                     font-size: 1rem;
                     text-align: left;
                     white-space: normal;
@@ -773,7 +590,7 @@ if st.session_state.current_system_extracted:
                 </h4>
                 <div style="
                     color: var(--text-primary);
-                    line-height: 1.45;
+                    line-height: 1.30;
                     font-size: 1rem;
                     text-align: left;
                     white-space: normal;
@@ -810,7 +627,7 @@ if st.session_state.current_system_extracted:
             </h4>
             <div style="
                 color: var(--text-primary);
-                line-height: 1.45;
+                line-height: 1.30;
                 font-size: 1rem;
                 text-align: left;
                 white-space: normal;

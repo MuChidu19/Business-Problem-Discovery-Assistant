@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import os
 import re
 import json
@@ -12,6 +12,9 @@ from shared_header import (
     save_feedback_to_admin_session,
     get_shared_data,
     render_unified_business_inputs,
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 
 # =========================================
@@ -107,125 +110,24 @@ if 'auth_token' not in st.session_state:
 # =========================================
 
 def json_to_text(data):
-    if not data:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text", "answer", "response"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        for value in data.values():
-            if isinstance(value, str) and len(value) > 10:
-                return value
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def sanitize_text(text):
-    if not text:
-        return ""
-    text = re.sub(r'^\s*s\s+', '', text.strip())
-    text = re.sub(r'\n\s*s\s+', '\n', text)
-    text = re.sub(r'Q\d+\s*Answer\s*Explanation\s*:', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    return text.strip()
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    return base
 
 # ------------------------------------------------------------------
-# format_stakeholders_html – FIXED
+# format_stakeholders_html â€“ FIXED
 # ------------------------------------------------------------------
 def format_stakeholders_html(text):
-    """Enhanced: bold headers, clean bullets, proper spacing"""
+    """Format agent output with global heading/subheading styling."""
     if not text:
         return "No stakeholder data available"
 
-    t = sanitize_text(text)
-    t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
-    t = re.sub(r'(?m)^(Section\s+\d+[\s:—–]*)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.IGNORECASE)
-    t = re.sub(r'(?m)^([A-Z][^:\n]+:)', r'<strong>\1</strong>', t)  # e.g. "Sponsor:"
-
-    lines = t.splitlines()
-    n = len(lines)
-    paragraph_html = []
-
-    # ------------------------------------------------------------------
-    # Helper – collect a paragraph (stops at empty line, bullet, section, or stakeholder)
-    # ------------------------------------------------------------------
-    def collect_paragraph(start_idx):
-        block = [lines[start_idx]]
-        j = start_idx + 1
-        while j < n:
-            nxt = lines[j]
-            if not nxt.strip():
-                break
-            if re.match(r'^\s*(?:•|\d+\.|-|Section|[A-Z][a-z]+)', nxt):
-                break
-            block.append(nxt)
-            j += 1
-        return block, j
-
-    i = 0
-    while i < n:
-        ln = lines[i].strip()
-        if not ln:
-            i += 1
-            continue
-
-        # Section headers
-        if re.match(r'^Section\s+\d+', ln, flags=re.IGNORECASE):
-            paragraph_html.append(f"<strong>{ln}</strong>")
-            i += 1
-            continue
-
-        # Stakeholder names (bold)
-        if re.match(r'^[A-Z][a-z]+(?:\s[A-Z][a-z]+)*(?:\s\([^)]+\))?:', ln):
-            paragraph_html.append(f"<strong>{ln}</strong>")
-            i += 1
-            continue
-
-        # Bullet lists
-        if re.match(r'^\s*(?:•|\d+\.|-)\s+', ln):
-            block_lines = []
-            while i < n and re.match(r'^\s*(?:•|\d+\.|-)\s+', lines[i]):
-                block_lines.append(re.sub(r'^\s*(?:•|\d+\.|-)\s+', '• ', lines[i].strip()))
-                i += 1
-            paragraph_html.extend(block_lines)
-            continue
-
-        # Normal paragraph
-        block, j = collect_paragraph(i)
-        paragraph_html.append("<br>".join([b.strip() for b in block if b.strip()]))
-        i = j
-
-    # Collapse into real paragraphs
-    final_paragraphs = []
-    temp = []
-    for line in paragraph_html:
-        if line:
-            temp.append(line)
-        elif temp:
-            final_paragraphs.append("<br>".join(temp))
-            temp = []
-    if temp:
-        final_paragraphs.append("<br>".join(temp))
-
-    para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>"
-        for p in final_paragraphs
-    ]
-    return "\n".join(para_wrapped)
+    clean = sanitize_text(text)
+    return format_compact_output(clean, body_line_height=1.30)
 
 def collect_paragraph(start_idx):
     block = [lines[start_idx]]
@@ -234,7 +136,7 @@ def collect_paragraph(start_idx):
         next_line = lines[j]
         if not next_line.strip():
             break
-        if re.match(r'^\s*(?:•|\d+\.|-|Section|[A-Z][a-z]+)', next_line):
+        if re.match(r'^\s*(?:â€¢|\d+\.|-|Section|[A-Z][a-z]+)', next_line):
             break
         block.append(next_line)
         j += 1
@@ -284,7 +186,7 @@ def call_api(agent_name, problem, outputs):
 def parse_sections_from_output(text):
     if not text:
         return ["Full Report"]
-    pattern = r'(Section\s+\d+[\s:—–][^\n]+)'
+    pattern = r'(Section\s+\d+[\s:â€”â€“][^\n]+)'
     matches = re.findall(pattern, text, flags=re.IGNORECASE)
     unique = []
     seen = set()
@@ -308,7 +210,7 @@ def get_employee_id():
         pass
     return "Not Available"
 
-def submit_feedback(section, feedback_type, user_id, off_definitions="", suggestions="", additional_feedback=""):
+def submit_feedback(feedback_type, user_id, off_definitions="", suggestions="", additional_feedback=""):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     account = st.session_state.get("current_account", "")
     industry = st.session_state.get("current_industry", "")
@@ -424,7 +326,7 @@ if analyze_btn:
     Industry: {industry}
     """.strip()
 
-    with st.spinner("Identifying stakeholders • up to 3 minutes"):
+    with st.spinner("Identifying stakeholders â€¢ up to 3 minutes"):
         result = call_api("identify_stakeholders", full_context, {})
         if result:
             st.session_state.stakeholders_output = result
@@ -495,33 +397,30 @@ if st.session_state.get("show_stakeholders") and st.session_state.get("stakehold
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("stakeholders_feedback_form_positive", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Feedback for section:", options=sections, index=0)
                 if st.form_submit_button("Submit Positive Feedback"):
-                    submit_feedback(section, "Positive", employee_id, additional_feedback="Useful")
+                    submit_feedback("Positive", employee_id, additional_feedback="Useful")
                     st.rerun()
 
         elif fb_choice == "I have read it, found some stakeholders or roles to be inaccurate.":
             with st.form("stakeholders_feedback_form_inaccurate", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Select Section", options=sections, index=0)
-                inaccurate = st.text_area("Paste stakeholder names or roles (one per line):", height=140)
+                inaccurate = st.text_input("Paste stakeholder names or roles (one per line):")
                 additional = st.text_input("Additional comments:")
                 if st.form_submit_button("Submit Feedback"):
                     if not inaccurate.strip() and not additional.strip():
                         st.warning("Please provide details.")
                     else:
                         off_defs = " | ".join([l.strip() for l in inaccurate.splitlines() if l.strip()]) or "No excerpts"
-                        submit_feedback(section, "Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
+                        submit_feedback("Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
                         st.rerun()
 
         elif fb_choice == "I have suggestions for improving the stakeholder identification.":
             with st.form("stakeholders_feedback_form_suggestions", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Suggestion for section:", options=sections, index=0)
-                suggestions = st.text_area("Your suggestions:", height=140)
+                suggestions = st.text_input("Your suggestions:")
                 if st.form_submit_button("Submit Feedback"):
                     if suggestions.strip():
-                        submit_feedback(section, "Suggestion", employee_id, suggestions=suggestions)
+                        submit_feedback("Suggestion", employee_id, suggestions=suggestions)
                         st.rerun()
                     else:
                         st.warning("Please provide suggestions.")
@@ -575,3 +474,4 @@ if st.session_state.get("show_stakeholders") and st.session_state.get("stakehold
 st.markdown("---")
 if st.button("Back to Main Page", use_container_width=True):
     st.switch_page("Welcome_Agent.py")
+

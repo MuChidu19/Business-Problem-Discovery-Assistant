@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import os
 import re
 import json
@@ -12,6 +12,9 @@ from shared_header import (
     save_feedback_to_admin_session,
     get_shared_data,
     render_unified_business_inputs,
+    format_compact_output,
+    sanitize_text_global,
+    json_to_text_global,
 )
 
 # =========================================
@@ -107,41 +110,13 @@ if 'auth_token' not in st.session_state:
 # =========================================
 
 def json_to_text(data):
-    if not data:
-        return ""
-    if isinstance(data, str):
-        return data
-    if isinstance(data, dict):
-        for key in ("result", "output", "content", "text", "answer", "response"):
-            if key in data and data[key]:
-                return json_to_text(data[key])
-        if "data" in data:
-            return json_to_text(data["data"])
-        for value in data.values():
-            if isinstance(value, str) and len(value) > 10:
-                return value
-        return "\n".join(f"{k}: {json_to_text(v)}" for k, v in data.items() if v)
-    if isinstance(data, list):
-        return "\n".join(json_to_text(x) for x in data if x)
-    return str(data)
+    """Extract text from JSON response using shared helper."""
+    return json_to_text_global(data)
 
 def sanitize_text(text):
-    if not text:
-        return ""
-    text = re.sub(r'^\s*s\s+', '', text.strip())
-    text = re.sub(r'\n\s*s\s+', '\n', text)
-    text = re.sub(r'Q\d+\s*Answer\s*Explanation\s*:', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    text = re.sub(r' {2,}', ' ', text)
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-    text = re.sub(r'<\/?[^>]+>', '', text)
-    return text.strip()
+    """Remove markdown artifacts and clean up text using shared helper."""
+    base = sanitize_text_global(text)
+    return base
 
 # Fixed: collect_paragraph now takes lines and n
 def collect_paragraph(lines, n, start_idx):
@@ -158,64 +133,12 @@ def collect_paragraph(lines, n, start_idx):
     return block, j
 
 def format_industry_html(text):
-    """Enhanced: bold section headers, clean bullets, proper spacing"""
+    """Format agent output with global heading/subheading styling."""
     if not text:
         return "No industry data available"
 
-    t = sanitize_text(text)
-    t = re.sub(r'(^|\n)\s*\*\s*', '\n• ', t)
-    t = re.sub(r'(?m)^(Section\s+\d+[\s:—–]*)\s*(.+)$', r'<strong>\1 \2</strong>', t, flags=re.IGNORECASE)
-
-    lines = t.splitlines()
-    n = len(lines)
-    i = 0
-    paragraph_html = []
-
-    while i < n:
-        ln = lines[i].strip()
-        if not ln:
-            i += 1
-            continue
-
-        # Section headers
-        if re.match(r'^Section\s+\d+', ln, flags=re.IGNORECASE):
-            paragraph_html.append(f"<strong>{ln}</strong>")
-            i += 1
-            continue
-
-        # Bullet lists
-        if re.match(r'^\s*(?:•|\d+\.|-)\s+', ln):
-            block_lines = []
-            while i < n and re.match(r'^\s*(?:•|\d+\.|-)\s+', lines[i]):
-                block_lines.append(re.sub(r'^\s*(?:•|\d+\.|-)\s+', '• ', lines[i].strip()))
-                i += 1
-            paragraph_html.extend(block_lines)
-            continue
-
-        # Paragraphs
-        block, j = collect_paragraph(lines, n, i)
-        paragraph_html.append("<br>".join([b.strip() for b in block if b.strip()]))
-        i = j
-
-    final_paragraphs = []
-    temp = []
-    for line in paragraph_html:
-        if line:
-            temp.append(line)
-        elif temp:
-            final_paragraphs.append("<br>".join(temp))
-            temp = []
-    if temp:
-        final_paragraphs.append("<br>".join(temp))
-
-    para_wrapped = [
-        f"<p style='margin:6px 0; line-height:1.45; font-size:0.98rem;'>{p}</p>" for p in final_paragraphs
-    ]
-    return "\n".join(para_wrapped)
-
-# =========================================
-# CENTRALIZED API CALL
-# =========================================
+    clean = sanitize_text(text)
+    return format_compact_output(clean, body_line_height=1.30)
 
 def call_api(agent_name, problem, outputs):
     config = next((a for a in API_CONFIGS if a["name"] == agent_name), None)
@@ -547,3 +470,4 @@ if st.session_state.get("show_industry") and st.session_state.get("industry_outp
 st.markdown("---")
 if st.button("Back to Main Page", use_container_width=True):
     st.switch_page("Welcome_Agent.py")
+
