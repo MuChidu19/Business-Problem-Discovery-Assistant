@@ -391,7 +391,6 @@ if st.session_state.get("show_industry") and st.session_state.get("industry_outp
         if fb_choice == "I have read it, found it useful, thanks.":
             with st.form("industry_feedback_form_positive", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                section = st.selectbox("Feedback for section:", options=sections, index=0)
                 if st.form_submit_button("Submit Positive Feedback"):
                     submit_feedback( "Positive", employee_id, additional_feedback="Useful")
                     st.rerun()
@@ -399,7 +398,7 @@ if st.session_state.get("show_industry") and st.session_state.get("industry_outp
         elif fb_choice == "I have read it, found some facts or sections to be inaccurate.":
             with st.form("industry_feedback_form_inaccurate", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
-                inaccurate = st.text_area("Paste inaccurate excerpts (one per line):", height=140)
+                inaccurate = st.text_input("Paste inaccurate excerpts (one per line):")
                 additional = st.text_input("Additional comments:")
                 if st.form_submit_button("Submit Feedback"):
                     if not inaccurate.strip() and not additional.strip():
@@ -413,7 +412,7 @@ if st.session_state.get("show_industry") and st.session_state.get("industry_outp
             with st.form("industry_feedback_form_suggestions", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')
                
-                suggestions = st.text_area("Your suggestions:", height=140)
+                suggestions = st.text_input("Your suggestions:")
                 if st.form_submit_button("Submit Feedback"):
                     if suggestions.strip():
                         submit_feedback( "Suggestion", employee_id, suggestions=suggestions)
