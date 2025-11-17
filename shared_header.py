@@ -1281,17 +1281,16 @@ def render_unified_business_inputs(page_key_prefix: str = "global", show_titles:
         .section-title-box { background: linear-gradient(135deg, #8b1e1e 0%, #ff6b35 100%)!important; border-radius:10px; padding:1rem 2rem; margin:0 0 1rem 0!important; text-align:center; box-shadow: 0 4px 12px rgba(139,30,30,0.3); }
         .section-title-box h3 { color:#ffffff!important; margin:0!important; font-weight:700!important; font-size:1.3rem!important; text-shadow: none !important; }
         
-        /* Auto-mapped indicator */
-        .auto-mapped-indicator {
-            background: rgba(139, 30, 30, 0.1);
-            border: 1px solid rgba(139, 30, 30, 0.3);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: 5px 0;
-            font-size: 0.85rem;
-            color: #8b1e1e;
-            text-align: center;
-        }
+       .auto-mapped-indicator {
+        background: rgba(139, 30, 30, 0.1);
+        border: 1px solid rgba(139, 30, 30, 0.3);
+        border-radius: 8px;
+        padding:4px 8px;
+        margin: 0px 5px 15px 0px;
+        font-size: 0.80rem;   /* Slightly smaller text */
+        color: #8b1e1e;
+        text-align: center;
+}
     </style>
     """, unsafe_allow_html=True)
 
@@ -1367,8 +1366,9 @@ def render_unified_business_inputs(page_key_prefix: str = "global", show_titles:
             key=industry_key
         )
         
-        # Show auto-mapped indicator
-        if is_auto_mapped:
+        # Show auto-mapped indicator as small text under the selectbox
+        # if is_auto_mapped:
+        if is_auto_mapped: 
             st.markdown(f'<div class="auto-mapped-indicator">🔒 Auto-mapped to: <strong>{current_industry}</strong></div>', unsafe_allow_html=True)
         
         # Only allow manual industry change if not auto-mapped
