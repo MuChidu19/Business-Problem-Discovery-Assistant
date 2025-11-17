@@ -67,7 +67,7 @@ API_CONFIGS = [
             "Understand Industry Context\n"
             "Identify and summarize the standard practices, frameworks, and operational norms commonly followed within the industry related to the companyâ€™s problem statement.\n\n"
             "Assess Company Practices\n"
-            "Examine how the specific company operates within its domainâ€”its current strategies, processes, and business approaches that align with or differ from standard industry practices.\n\n"
+            "Examine how the specific company operates within its domain—its current strategies, processes, and business approaches that align with or differ from standard industry practices.\n\n"
             "Analyze Competitor Benchmarks\n"
             "Discover and analyze key competitors, exploring their best practices, innovative strategies, and differentiating factors that contribute to their market position or success.\n\n"
             "Synthesize Strategic Insights (Non-Solution Oriented)\n"

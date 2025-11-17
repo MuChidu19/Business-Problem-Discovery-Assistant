@@ -402,7 +402,7 @@ if st.session_state.get("show_vocabulary") and st.session_state.get("vocab_outpu
             r'\bthe industry\b', display_industry, formatted_vocab, flags=re.IGNORECASE)
 
     # Convert newlines to <br> for proper HTML display
-    html_body = formatted_vocab.replace('\n', '<br>')
+    html_body = formatted_vocab
 
         # Single box for vocabulary with proper spacing and visible border
     st.markdown(

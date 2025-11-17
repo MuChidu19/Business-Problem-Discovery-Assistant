@@ -119,15 +119,9 @@ def sanitize_text(text):
     base = sanitize_text_global(text)
     return base
 
-def format_company_html(text):
-    """Format agent output with global heading/subheading styling."""
-    if not text:
-        return "No company data available"
 
-    clean = sanitize_text(text)
-    return format_compact_output(clean, body_line_height=1.30)
-
-def collect_paragraph(start_idx):
+# Fixed: collect_paragraph now takes lines and n
+def collect_paragraph(lines, n, start_idx):
     block = [lines[start_idx]]
     j = start_idx + 1
     while j < n:
@@ -140,6 +134,13 @@ def collect_paragraph(start_idx):
         j += 1
     return block, j
 
+def format_company_html(text):
+    """Format agent output with global heading/subheading styling."""
+    if not text:
+        return "No company data available"
+
+    clean = sanitize_text(text)
+    return format_compact_output(clean, body_line_height=1.30)
 # =========================================
 # CENTRALIZED API CALL
 # =========================================
@@ -344,10 +345,10 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
         <div style="margin:20px 0;">
             <div class="section-title-box" style="padding:1rem 1.5rem; background:#0b5f8a; border-radius:12px;">
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:white;">
-                    <h3 style="margin:0; font-weight:800; font-size:1.4rem;">Company Research</h3>
+                    <h3 style="margin:0; font-weight:800; font-size:1.4rem;">Campany Research</h3>
                     <p style="font-size:0.95rem; margin:8px 0 0; max-width:900px; text-align:center;">
-                        AI-generated context for <strong>{display_account}</strong> in <strong>{display_industry}</strong>.<br>
-                        Covers vision, operations, financials, and root causes — no solutions.
+                        AI-generated industry context for <strong>{display_account}</strong> in <strong>{display_industry}</strong>.<br>
+                        Covers market, players, trends, and ecosystem — no solutions.
                     </p>
                 </div>
             </div>
@@ -357,6 +358,7 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
     )
 
     formatted_html = format_company_html(st.session_state.company_output)
+    html_body = formatted_html.replace('\n', '<br>')
 
     st.markdown(
         f"""
@@ -366,9 +368,9 @@ if st.session_state.get("show_company") and st.session_state.get("company_output
             <h4 style="color:#0b5f8a; font-weight:700; font-size:1.15rem; 
                       margin:0 0 1rem; border-bottom:2px solid #0b5f8a; 
                       padding-bottom:0.5rem;">
-                Company Overview
+                Industry Overview
             </h4>
-            {formatted_html}
+            {html_body}
         </div>
         """,
         unsafe_allow_html=True,

@@ -356,6 +356,7 @@ if st.session_state.get("show_industry") and st.session_state.get("industry_outp
     )
 
     formatted_html = format_industry_html(st.session_state.industry_output)
+    html_body = formatted_html.replace('\n', '<br>')
 
     st.markdown(
         f"""
@@ -367,7 +368,7 @@ if st.session_state.get("show_industry") and st.session_state.get("industry_outp
                       padding-bottom:0.5rem;">
                 Industry Overview
             </h4>
-            {formatted_html}
+            {html_body}
         </div>
         """,
         unsafe_allow_html=True,

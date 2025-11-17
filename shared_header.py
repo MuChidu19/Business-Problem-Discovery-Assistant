@@ -11,7 +11,8 @@ from datetime import datetime
 import re  # legacy helpers still use standard re
 
 # Logo URL for the header
-LOGO_URL = "https://yt3.googleusercontent.com/ytc/AIdro_k-7HkbByPWjKpVPO3LCF8XYlKuQuwROO0vf3zo1cqgoaE=s900-c-k-c0x00ffffff-no-rj"
+LOGO_URL = LOGO_URL = "https://yt3.googleusercontent.com/ytc/AIdro_k-7HkbByPWjKpVPO3LCF8XYlKuQuwROO0vf3zo1cqgoaE=s900-c-k-c0x00ffffff-no-rj"
+
 # ===== Global Output Formatting Utilities =====
 import re as _re
 

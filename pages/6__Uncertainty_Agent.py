@@ -339,6 +339,7 @@ if st.session_state.get("show_uncertainty") and st.session_state.get("uncertaint
         if api_output and api_output != "No data available":
             api_desc = next((cfg["description"] for cfg in API_CONFIGS if cfg["name"] == api_name), api_name)
             formatted_html = format_uncertainty_with_bold(api_output)
+            html_body = formatted_html.replace('\n', '<br>')
 
             if display_account != "Unknown Company":
                 formatted_html = re.sub(r'\bthe company\b', display_account, formatted_html, flags=re.IGNORECASE)
@@ -355,7 +356,7 @@ if st.session_state.get("show_uncertainty") and st.session_state.get("uncertaint
                               padding-bottom:0.5rem;">
                         {api_name}: {api_desc}
                     </h4>
-                    {formatted_html}
+                    {html_body}
                 </div>
                 """,
                 unsafe_allow_html=True,
