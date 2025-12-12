@@ -813,6 +813,10 @@ def render_main_app():
     """, unsafe_allow_html=True)
 
     # 🔥 FIXED: Correct page paths for Streamlit Cloud
+    #{"name": "Volatility Agent", "icon": "", "page": "pages/3__Volatility_Agent.py", "desc": "Track market dynamics"},
+    #{"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
+    #{"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
+    #{"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
     agents = [
     {"name": "Vocabulary Agent", "icon": "", "page": "pages/1__Vocabulary_Agent.py", "desc": "Decode industry terminology"},
     {"name": "Industry Research Agent", "icon": "", "page": "pages/Industry_Research_Agent.py", "desc": "Analyze the broader industry landscape"},
