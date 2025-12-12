@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getConstants } from '../api/client'
 
-export default function UnifiedInputs({ value, onChange, saveLabel = 'Save Problem Details' }) {
+export default function UnifiedInputs({ value, onChange, onSave, saveLabel = 'Save Problem Details' }) {
   const [constants, setConstants] = useState({ accounts: [], industries: [], map: {} })
   const [saved, setSaved] = useState(value)
 
@@ -23,6 +23,16 @@ export default function UnifiedInputs({ value, onChange, saveLabel = 'Save Probl
     }
   }, [value.account])
 
+  // Ensure subcategory defaults to first option of selected industry
+  const subcats = (constants.subcategories && constants.subcategories[value.industry]) || []
+  useEffect(() => {
+    if (value.industry && subcats.length) {
+      if (!value.industry_subcategory || !subcats.includes(value.industry_subcategory)) {
+        onChange({ ...value, industry_subcategory: subcats[0] })
+      }
+    }
+  }, [value.industry, subcats.length])
+
   const hasUnsaved = (
     value.account !== saved.account ||
     value.industry !== saved.industry ||
@@ -41,8 +51,14 @@ export default function UnifiedInputs({ value, onChange, saveLabel = 'Save Probl
         </div>
         <div className="col">
           <label>Industry</label>
-          <select className="select" value={value.industry} onChange={e => onChange({ ...value, industry: e.target.value })} disabled={!!isAutoMapped}>
-            {constants.industries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+          <div className="input" style={{display:'flex',alignItems:'center',height: 'auto'}}>
+            {value.industry || 'Select Industry'}
+          </div>
+        </div>
+        <div className="col">
+          <label>Subcategory</label>
+          <select className="select" value={value.industry_subcategory || ''} onChange={e => onChange({ ...value, industry_subcategory: e.target.value })}>
+            {subcats.length ? subcats.map(sc => <option key={sc} value={sc}>{sc}</option>) : <option value="">Select Subcategory</option>}
           </select>
         </div>
       </div>
@@ -50,10 +66,7 @@ export default function UnifiedInputs({ value, onChange, saveLabel = 'Save Probl
       <div className="section-title-box" style={{ marginTop: 16 }}><strong>Business Problem Description</strong></div>
       <textarea className="textarea" rows={6} placeholder="Describe your business problem in detail..." value={value.problem} onChange={e => onChange({ ...value, problem: e.target.value })} />
 
-      {hasUnsaved && (
-        <button className="button primary" onClick={() => setSaved(value)}>{saveLabel}</button>
-      )}
+      <button className="button primary" onClick={() => { setSaved(value); onSave && onSave(value) }}>{saveLabel}</button>
     </div>
   )
 }
-

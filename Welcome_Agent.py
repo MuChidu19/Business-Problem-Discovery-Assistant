@@ -821,10 +821,6 @@ def render_main_app():
     {"name": "Identify Stakeholders Agent", "icon": "", "page": "pages/Identify_Stakeholders_Agent.py", "desc": "Find key decision-makers"},
     {"name": "Standard Practices Agent", "icon": "", "page": "pages/Standard_Practices_Agent.py", "desc": "Benchmark best practices"},
     {"name": "Current System Agent", "icon": "", "page": "pages/2__Current_System_Agent.py", "desc": "Analyze existing systems"},
-    {"name": "Volatility Agent", "icon": "", "page": "pages/3__Volatility_Agent.py", "desc": "Track market dynamics"},
-    {"name": "Ambiguity Agent", "icon": "", "page": "pages/4__Ambiguity_Agent.py", "desc": "Clarify uncertainties"},
-    {"name": "Interconnectedness Agent", "icon": "", "page": "pages/5__Interconnectedness_Agent.py", "desc": "Map relationships"},
-    {"name": "Uncertainty Agent", "icon": "", "page": "pages/6__Uncertainty_Agent.py", "desc": "Quantify risks"},
     {"name": "Push the Boundary Agent", "icon":"", "page": "pages/Problem_Complexity_Agent.py", "desc": "Reveals hidden complexity"},
 ]
         

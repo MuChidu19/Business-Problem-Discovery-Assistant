@@ -324,7 +324,7 @@ if analyze_btn:
     Industry: {industry}
     """.strip()
 
-    with st.spinner("Revealing hidden complexity â€¢ up to 3 minutes"):
+    with st.spinner("Revealing hidden complexity wait up to 3 minutes"):
         result = call_api("analyze_problem_complexity", full_context, {})
         if result:
             st.session_state.complexity_output = result

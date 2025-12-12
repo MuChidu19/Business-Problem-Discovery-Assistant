@@ -326,7 +326,7 @@ if analyze_btn:
     Industry: {industry}
     """.strip()
 
-    with st.spinner("Identifying stakeholders â€¢ up to 3 minutes"):
+    with st.spinner("Identifying stakeholders wait up to 3 minutes"):
         result = call_api("identify_stakeholders", full_context, {})
         if result:
             st.session_state.stakeholders_output = result

@@ -7,7 +7,7 @@ from app.models import AnalyzeRequest, AnalyzeResponse, Feedback
 from app.services.feedback import append_feedback, read_feedback
 from app.services.talos import call_talos
 from app.utils.text import format_compact_output
-from app.utils.account_industry import ACCOUNTS, INDUSTRIES, ACCOUNT_INDUSTRY_MAP
+from app.utils.account_industry import ACCOUNTS, INDUSTRIES, ACCOUNT_INDUSTRY_MAP, INDUSTRY_SUBCATEGORIES
 
 
 app = FastAPI(title="Business Problem Discovery Assistant API")
@@ -38,6 +38,7 @@ def get_accounts():
         "accounts": ACCOUNTS,
         "industries": INDUSTRIES,
         "map": ACCOUNT_INDUSTRY_MAP,
+        "subcategories": INDUSTRY_SUBCATEGORIES,
     }
 
 
@@ -71,7 +72,12 @@ def analyze_vocabulary(req: AnalyzeRequest):
     if not req.problem or req.account in (None, ""):
         raise HTTPException(status_code=400, detail="Missing required fields: problem, account")
 
-    prompt = f"{req.problem}\n\nExtract the vocabulary from this problem statement."
+    prompt = (
+        f"{req.problem}\n\n"
+        f"Industry: {req.industry}\n"
+        f"Subcategory: {req.industry_subcategory or ''}\n\n"
+        "Extract the vocabulary from this problem statement."
+    )
     try:
         raw_text = call_talos(VOCAB_URL, prompt, multiround_convo=max(1, req.multiround_convo or 1))
         html = format_compact_output(raw_text, body_line_height=1.30)
@@ -101,6 +107,8 @@ INDUSTRY_URL = (
 def analyze_industry(req: AnalyzeRequest):
     prompt = (
         f"{req.problem}\n\n"
+        f"Industry: {req.industry}\n"
+        f"Subcategory: {req.industry_subcategory or ''}\n\n"
         "Explore and document the industry connected to the above problem statement.\n"
         "Cover operations, market structure, customers, competitive landscape, supply chain, regulatory environment, trends, demand drivers, key players, and external forces.\n"
         "Do not propose solutions. Stick to facts, context, and explanations that help understand the ecosystem.\n"

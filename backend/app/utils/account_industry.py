@@ -55,3 +55,21 @@ if "Other" not in INDUSTRIES:
     INDUSTRIES.append("Other")
 INDUSTRIES = ["Select Industry"] + INDUSTRIES
 
+# Optional subcategories per industry for finer selection
+INDUSTRY_SUBCATEGORIES = {
+    "Pharma": ["R&D", "Manufacturing", "Supply Chain", "Regulatory", "Commercial"],
+    "Healthcare": ["Providers", "Payers", "Medical Devices"],
+    "Technology": ["Software", "Hardware", "Cloud", "Data/AI"],
+    "Energy": ["Upstream", "Midstream", "Downstream", "Renewables"],
+    "Finance": ["Banking", "Insurance", "Asset Management", "Payments"],
+    "Retail": ["E-commerce", "Brick & Mortar", "Omnichannel", "Supply Chain"],
+    "Consumer Goods": ["CPG - Food", "CPG - Non-food", "D2C"],
+    "Food & Beverage": ["Processing", "Distribution", "QSR"],
+    "Airlines": ["Operations", "Revenue Mgmt", "Ground Handling"],
+    "Telecom": ["Wireless", "Broadband", "Enterprise"],
+    "Hospitality": ["Cruise", "Hotels", "Leisure"],
+    "Aerospace": ["Defense", "Commercial", "Aftermarket"],
+    "Services": ["Loyalty", "BPO", "Consulting"],
+    "Education": ["K-12", "Higher Ed", "EdTech"],
+    "Other": ["General"]
+}

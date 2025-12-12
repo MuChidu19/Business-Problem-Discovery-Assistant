@@ -321,7 +321,7 @@ if analyze_btn:
     Industry: {industry}
     """.strip()
 
-    with st.spinner("Generating discovery questions â€¢ up to 3 minutes"):
+    with st.spinner("Generating discovery questions wait up to 3 minutes"):
         result = call_api("discover_questions", full_context, {})
         if result:
             st.session_state.questions_output = result

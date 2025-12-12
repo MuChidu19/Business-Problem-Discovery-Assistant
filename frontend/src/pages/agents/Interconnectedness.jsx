@@ -1,58 +1,37 @@
 import { useEffect, useState } from 'react'
 import SharedHeader from '../../components/SharedHeader'
-import UnifiedInputs from '../../components/UnifiedInputs'
 import SectionTitle from '../../components/SectionTitle'
-import { analyze } from '../../api/client'
+ 
 import ReportActions from '../../components/ReportActions'
+ 
 
 export default function Interconnectedness() {
   const [form, setForm] = useState(() => ({
     account: localStorage.getItem('account') || 'Select Account',
     industry: localStorage.getItem('industry') || 'Select Industry',
+    industry_subcategory: localStorage.getItem('industry_subcategory') || '',
     problem: localStorage.getItem('problem') || ''
   }))
-  const [loading, setLoading] = useState(false)
   const [html, setHtml] = useState('')
 
   useEffect(() => { localStorage.setItem('account', form.account) }, [form.account])
   useEffect(() => { localStorage.setItem('industry', form.industry) }, [form.industry])
+  useEffect(() => { localStorage.setItem('industry_subcategory', form.industry_subcategory || '') }, [form.industry_subcategory])
   useEffect(() => { localStorage.setItem('problem', form.problem) }, [form.problem])
 
-  const canAnalyze = form.account && form.account !== 'Select Account' && form.industry && form.industry !== 'Select Industry' && form.problem.trim()
-
-  const onAnalyze = async () => {
-    setLoading(true)
-    try {
-      const payload = {
-        employee_id: localStorage.getItem('employee_id') || '',
-        account: form.account,
-        industry: form.industry,
-        problem: form.problem,
-        context: {
-          vocabulary: localStorage.getItem('vocabulary_html') || '',
-          current_system: localStorage.getItem('current_system_html') || ''
-        },
-        multiround_convo: 2
-      }
-      const res = await analyze('interconnectedness', payload)
-      setHtml(res.output_text)
-    } catch (e) {
-      setHtml(`<div class='card'>Error: ${e?.message || e}</div>`) 
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    setHtml(localStorage.getItem('interconnectedness_html') || '')
+  }, [])
 
   return (
     <>
       <SharedHeader title="Interconnectedness Agent" subtitle="Map system dependencies and propagation effects" />
       <div className="container">
-        <UnifiedInputs value={form} onChange={setForm} />
-        <div style={{marginTop: 12}}>
-          <button className="button primary" disabled={!canAnalyze || loading} onClick={onAnalyze}>
-            {loading ? 'Analyzing…' : 'Analyze Interconnectedness'}
-          </button>
-        </div>
+        {!html && (
+          <div className="card" style={{marginTop:12}}>
+            Analysis not ready yet. Please go back to Home and click Save Problem Details.
+          </div>
+        )}
         {html && <SectionTitle title="Interconnectedness Analysis" />}
         {html && (
           <div style={{margin:'8px 0 0', textAlign:'center', opacity:0.8}}>
@@ -70,3 +49,7 @@ export default function Interconnectedness() {
     </>
   )
 }
+
+
+
+

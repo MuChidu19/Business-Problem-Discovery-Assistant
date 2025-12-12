@@ -6,6 +6,7 @@ class AnalyzeRequest(BaseModel):
     employee_id: Optional[str] = ""
     account: str
     industry: str
+    industry_subcategory: Optional[str] = ""
     problem: str
     context: Dict[str, Any] = Field(default_factory=dict)
     multiround_convo: Optional[int] = 1
@@ -28,4 +29,3 @@ class Feedback(BaseModel):
     Agent: str = ""
     Section: Optional[str] = ""
     Timestamp: Optional[str] = None
-
