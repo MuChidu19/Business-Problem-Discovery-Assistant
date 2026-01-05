@@ -392,7 +392,7 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
             with st.form("questions_feedback_form_positive", clear_on_submit=True):
                 st.markdown(f'**Employee ID:** {employee_id}')           
                 if st.form_submit_button("Submit Positive Feedback"):
-                    submit_feedback( "Positive", employee_id, additional_feedback="Useful")
+                    submit_feedback("Question Discovery", "Positive", employee_id, additional_feedback="Useful")
                     st.rerun()
 
         elif fb_choice == "I have read it, found some questions to be irrelevant or unclear.":
@@ -405,7 +405,7 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
                         st.warning("Please provide details.")
                     else:
                         off_defs = " | ".join([l.strip() for l in inaccurate.splitlines() if l.strip()]) or "No excerpts"
-                        submit_feedback("Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
+                        submit_feedback("Question Discovery", "Inaccurate", employee_id, off_definitions=off_defs, additional_feedback=additional)
                         st.rerun()
 
         elif fb_choice == "I have suggestions for improving the question generation.":
@@ -414,7 +414,7 @@ if st.session_state.get("show_questions") and st.session_state.get("questions_ou
                 suggestions = st.text_input("Your suggestions:")
                 if st.form_submit_button("Submit Feedback"):
                     if suggestions.strip():
-                        submit_feedback( "Suggestion", employee_id, suggestions=suggestions)
+                        submit_feedback("Question Discovery", "Suggestion", employee_id, suggestions=suggestions)
                         st.rerun()
                     else:
                         st.warning("Please provide suggestions.")
